@@ -79,20 +79,17 @@ namespace DelaunayVoronoi
             }
 
             // remove border triangles
-            var reducedTriangulation = new HashSet<Triangle>();
-
-            foreach (var triangle in triangulation) {
-                bool remove = false;
-                foreach (Point point in bounds) {
+            HashSet<Triangle> borderTriangles = new HashSet<Triangle>();
+            foreach(var triangle in triangulation) {
+                foreach (var point in bounds) {
                     if (((triangle.Vertices[0] == point) || (triangle.Vertices[1] == point) || (triangle.Vertices[2] == point))) {
-                        remove = true;
+                        borderTriangles.Add(triangle);
                     }
                 }
-                if (!remove) reducedTriangulation.Add(triangle);
-                remove = false;
             }
+            triangulation.RemoveWhere(o => borderTriangles.Contains(o));
 
-            return reducedTriangulation;
+            return triangulation;
         }
 
         private List<Edge> FindHoleBoundaries(ISet<Triangle> badTriangles)
