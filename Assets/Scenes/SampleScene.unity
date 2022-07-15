@@ -508,7 +508,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 08406e2a0b0faed42a096fbdc5e04fd7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  number_of_seeds: 100
+  number_of_seeds: 80
   clustering_Factor: 7
 --- !u!1 &2012938531
 GameObject:

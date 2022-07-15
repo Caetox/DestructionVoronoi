@@ -89,6 +89,14 @@ namespace DelaunayVoronoi
             }
             triangulation.RemoveWhere(o => borderTriangles.Contains(o));
 
+            foreach (var triangle in borderTriangles)
+            {
+                foreach (var vertex in triangle.Vertices)
+                {
+                    vertex.AdjacentTriangles.Remove(triangle);
+                }
+            }
+
             return triangulation;
         }
 
