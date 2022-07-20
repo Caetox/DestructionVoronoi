@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using UnityEngine;
 
 public class Triangle
 {
     public Point[] Vertices { get; } = new Point[3];
-    public Point Circumcenter { get; private set; }
-    public double RadiusSquared;
+    public Point Circumcenter;
+    public float RadiusSquared;
 
     public IEnumerable<Triangle> TrianglesWithSharedEdge {
         get {
@@ -27,13 +27,6 @@ public class Triangle
 
     public Triangle(Point point1, Point point2, Point point3)
     {
-        // In theory this shouldn't happen, but it was at one point so this at least makes sure we're getting a
-        // relatively easily-recognised error message, and provides a handy breakpoint for debugging.
-        if (point1 == point2 || point1 == point3 || point2 == point3)
-        {
-            throw new ArgumentException("Must be 3 distinct points");
-        }
-
         if (!IsCounterClockwise(point1, point2, point3))
         {
             Vertices[0] = point1;
@@ -57,32 +50,34 @@ public class Triangle
     {
         // https://codefound.wordpress.com/2013/02/21/how-to-compute-a-circumcircle/#more-58
         // https://en.wikipedia.org/wiki/Circumscribed_circle
-        var p0 = Vertices[0];
-        var p1 = Vertices[1];
-        var p2 = Vertices[2];
-        var dA = p0.X * p0.X + p0.Y * p0.Y;
-        var dB = p1.X * p1.X + p1.Y * p1.Y;
-        var dC = p2.X * p2.X + p2.Y * p2.Y;
+        var p0 = Vertices[0].Loc;
+        var p1 = Vertices[1].Loc;
+        var p2 = Vertices[2].Loc;
+        var dA = p0.x * p0.x + p0.z * p0.z;
+        var dB = p1.x * p1.x + p1.z * p1.z;
+        var dC = p2.x * p2.x + p2.z * p2.z;
 
-        var aux1 = (dA * (p2.Y - p1.Y) + dB * (p0.Y - p2.Y) + dC * (p1.Y - p0.Y));
-        var aux2 = -(dA * (p2.X - p1.X) + dB * (p0.X - p2.X) + dC * (p1.X - p0.X));
-        var div = (2 * (p0.X * (p2.Y - p1.Y) + p1.X * (p0.Y - p2.Y) + p2.X * (p1.Y - p0.Y)));
+        var aux1 = (dA * (p2.z - p1.z) + dB * (p0.z - p2.z) + dC * (p1.z - p0.z));
+        var aux2 = -(dA * (p2.x - p1.x) + dB * (p0.x - p2.x) + dC * (p1.x - p0.x));
+        var div = (2 * (p0.x * (p2.z - p1.z) + p1.x * (p0.z - p2.z) + p2.x * (p1.z - p0.z)));
 
-        if (div == 0)
+        if (Mathf.Abs(div) > 0)
         {
-            throw new DivideByZeroException();
+            var center = new Vector3(aux1 / div, 0, aux2 / div);
+            Circumcenter = new Point(center.x, center.z);
+            RadiusSquared = (center.x - p0.x) * (center.x - p0.x) + (center.z - p0.z) * (center.z - p0.z);
         }
-
-        var center = new Point(aux1 / div, aux2 / div);
-        Circumcenter = center;
-        RadiusSquared = (center.X - p0.X) * (center.X - p0.X) + (center.Y - p0.Y) * (center.Y - p0.Y);
     }
-
-    private bool IsCounterClockwise(Point point1, Point point2, Point point3)
+	Vector3 GetNormal(Point point1, Point point2, Point point3)
+	{
+		Vector3 side1 = point2.Loc - point1.Loc;
+		Vector3 side2 = point3.Loc - point1.Loc;
+		Vector3 x = Vector3.Cross(side1, side2).normalized;
+		return x;
+	}
+	private bool IsCounterClockwise(Point point1, Point point2, Point point3)
     {
-        var result = (point2.X - point1.X) * (point3.Y - point1.Y) -
-            (point3.X - point1.X) * (point2.Y - point1.Y);
-        return result > 0;
+        return GetNormal(point1, point2, point3).y > 0;
     }
 
     public bool SharesEdgeWith(Triangle triangle)
@@ -93,8 +88,8 @@ public class Triangle
 
     public bool IsPointInsideCircumcircle(Point point)
     {
-        var d_squared = (point.X - Circumcenter.X) * (point.X - Circumcenter.X) +
-            (point.Y - Circumcenter.Y) * (point.Y - Circumcenter.Y);
+        var d_squared = (point.Loc.x - Circumcenter.Loc.x) * (point.Loc.x - Circumcenter.Loc.x) +
+            (point.Loc.z - Circumcenter.Loc.z) * (point.Loc.z - Circumcenter.Loc.z);
         return d_squared < RadiusSquared;
     }
 }

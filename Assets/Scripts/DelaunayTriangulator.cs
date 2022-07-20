@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class DelaunayTriangulator
 {
-    private double MaxX { get; set; }
-    private double MaxY { get; set; }
+    private float MaxX { get; set; }
+    private float MaxY { get; set; }
 
     static float NormalizedRandom(float mean, float stddev) {
 		var u1 = UnityEngine.Random.value;
@@ -17,10 +17,10 @@ public class DelaunayTriangulator
 		return mean + stddev * randStdNormal;
 }
 
-    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector2 objectSize, int clustering_Factor)
+    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector3 objectSize, int clustering_Factor, Vector2 shift)
     {
         MaxX = objectSize.x;
-        MaxY = objectSize.y;
+        MaxY = objectSize.z;
 
         var points = new List<Point>() {};
 
@@ -94,8 +94,7 @@ public class DelaunayTriangulator
                 vertex.AdjacentTriangles.Remove(triangle);
             }
         }
-
-        return triangulation;
+		return triangulation;
     }
 
     private List<Edge> FindHoleBoundaries(ISet<Triangle> badTriangles)

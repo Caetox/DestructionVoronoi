@@ -16,18 +16,18 @@ public class Fragment : MonoBehaviour
         
     }
 
-    public void Generate(Polygon Data)
+    public void Generate(Polygon Data, float depth)
 	{
-        MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
+		MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
 		MeshFilter meshFilter = GetComponent<MeshFilter>();
 		MeshCollider meshCollider = GetComponent<MeshCollider>();
 		Mesh mesh = new Mesh();
 
 		int EdgeCount = Data.Edges.Count;
 
-		Vector3[] vertices = new Vector3[EdgeCount * 2];
-		Vector3[] normals = new Vector3[EdgeCount * 2];
-		Vector2[] uv = new Vector2[EdgeCount * 2];
+		Vector3[] vertices = new Vector3[EdgeCount * 4];
+		Vector3[] normals = new Vector3[EdgeCount * 4];
+		Vector2[] uv = new Vector2[EdgeCount * 4];
 		int[] triangles = new int[(EdgeCount * 2 + (2 * (EdgeCount - 2))) * 3];
 
 		int vertexIndex = 0;
@@ -35,27 +35,13 @@ public class Fragment : MonoBehaviour
 		int uvIndex = 0;
 		int triangleIndex = 0;
 
-		float depth = 0.3f;
-
 		// Front
-		Vector3 MainPoint = Data.Edges[0].Point1.Loc;
-
-		Vector3 testoffset = new Vector3(0, Random.Range(-0.01f, 0.01f), 0);
-		Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
 
 		for (int i = 0; i < EdgeCount; ++i)
-		{
-			vertices[vertexIndex++] = Data.Edges[i].Point1.Loc;
-			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc;
-
-			normals[normalIndex++] = Vector3.forward;
-			normals[normalIndex++] = Vector3.forward;
-
-			uv[uvIndex++] = Data.Edges[i].Point1.Uv;
+		{	
+			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc;
+			normals[normalIndex++] = -Vector3.forward;
 			uv[uvIndex++] = Data.Edges[i].Point2.Uv;
-
-			
-			Debug.DrawLine(vertices[vertexIndex - 2] + testoffset, vertices[vertexIndex - 1] + testoffset, randomColor, 100f);
 		}
 
 		for (int i = 0; i < EdgeCount - 2; ++i)
@@ -64,6 +50,58 @@ public class Fragment : MonoBehaviour
 			triangles[triangleIndex++] = (1 + i);
 			triangles[triangleIndex++] = 0;
 		}
+
+		// Back
+		Vector3 depthVec = new Vector3(0, -depth, 0);
+		for (int i = 0; i < EdgeCount; ++i)
+		{
+			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc + depthVec;
+			normals[normalIndex++] = Vector3.forward;
+			uv[uvIndex++] = Data.Edges[i].Point2.Uv;
+		}
+
+		for (int i = 0; i < EdgeCount - 2; ++i)
+		{
+			triangles[triangleIndex++] = EdgeCount + 0;
+			triangles[triangleIndex++] = EdgeCount + (1 + i);
+			triangles[triangleIndex++] = EdgeCount + (2 + i);
+		}
+
+		// Sides
+
+		for (int i = 0; i < EdgeCount; ++i)
+		{
+			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc;
+			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc + depthVec;
+			normals[normalIndex++] = Vector3.forward;
+			normals[normalIndex++] = Vector3.forward;
+
+			float u = (float)i / (float)EdgeCount;
+			uv[uvIndex++] = new Vector2(u, 1.0f);
+			uv[uvIndex++] = new Vector2(u, 0.0f);
+		}
+
+		int IndexOffset = EdgeCount * 2;
+		for (int i = 0; i < EdgeCount - 2; ++i)
+		{
+			triangles[triangleIndex++] = IndexOffset + 2 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 1 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 0 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 2 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 3 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 1 + (i * 2);
+		}
+
+
+		// Debug
+		Vector3 testoffset = new Vector3(0, Random.Range(-0.05f, 0.05f), 0);
+		Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+		for (int i = 1; i < EdgeCount; ++i)
+		{
+			Debug.DrawLine(vertices[i] + testoffset + Data.Centroid.Loc, vertices[i - 1] + testoffset + Data.Centroid.Loc, randomColor, 100f);
+		}
+
+		
 
 		// Apply
 
