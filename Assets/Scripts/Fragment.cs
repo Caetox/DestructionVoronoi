@@ -41,7 +41,7 @@ public class Fragment : MonoBehaviour
 		{	
 			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc;
 			normals[normalIndex++] = -Vector3.forward;
-			uv[uvIndex++] = Data.Edges[i].Point2.Uv;
+			uv[uvIndex++] = Data.Edges[i].Point2.Uv / 10.0f;
 		}
 
 		for (int i = 0; i < EdgeCount - 2; ++i)
@@ -57,7 +57,7 @@ public class Fragment : MonoBehaviour
 		{
 			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc + depthVec;
 			normals[normalIndex++] = Vector3.forward;
-			uv[uvIndex++] = Data.Edges[i].Point2.Uv;
+			uv[uvIndex++] = Data.Edges[i].Point2.Uv / 10.0f;
 		}
 
 		for (int i = 0; i < EdgeCount - 2; ++i)
