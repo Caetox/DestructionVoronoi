@@ -17,27 +17,38 @@ public class DestructionController : MonoBehaviour
 
 
     void Start() {
-        Collider collider = gameObject.GetComponent<Collider>();
-        objectSize = collider.bounds.size;
-        shift = new Vector2(collider.bounds.min.x, collider.bounds.min.z);
+        BoxCollider collider = gameObject.GetComponent<BoxCollider>();
+        objectSize = new Vector3(collider.size.x * transform.localScale.x, collider.size.y * transform.localScale.y, collider.size.z * transform.localScale.z);
+        shift = new Vector2(objectSize.x * 0.5f, objectSize.z * 0.5f);
     }
 
 
     void OnCollisionEnter(Collision collision)
     {
+        // Only care about collisions with objects that have a projectile-component.
+        Projectile projectile = collision.gameObject.GetComponent<Projectile>();
+        if (projectile == null)
+		{
+            return;
+		}
+
+        Vector3 collisionPosition = transform.InverseTransformPoint(collision.contacts[0].point);
+        collisionPosition = new Vector3(collisionPosition.x * transform.localScale.x, collisionPosition.y * transform.localScale.y, collisionPosition.z * transform.localScale.z);
+
+        //Debug.DrawLine(collisionPosition, collisionPosition + new Vector3(0, 1, 0), Color.red, 100.0f);
         // location of collision
-        var contactPoint = new Vector2(collision.contacts[0].point.x - shift.x, collision.contacts[0].point.z - shift.y);
+        var contactPoint = new Vector2(collisionPosition.x + shift.x, collisionPosition.z + shift.y);
 
         // generate seeds
-        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, shift);
+        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, -shift);
 
         // run delaunay triangulation
-        var triangulation = delaunay.BowyerWatson(seeds, shift);
+        var triangulation = delaunay.BowyerWatson(seeds, -shift);
 
         // construct voronoi diagram
         var polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation);
 
-        GenerateFragments(polygons, shift, objectSize);
+        GenerateFragments(polygons, -shift, objectSize);
 
 		// visualization of delaunay triangulation
 		//var shiftedTriangulation = new HashSet<Triangle>();
@@ -80,8 +91,10 @@ public class DestructionController : MonoBehaviour
 		{
             if (polygon.IsValid)
             {
-                GameObject Child = Instantiate<GameObject>(FragmentPrefab, polygon.Centroid.Loc + projectedShift, Quaternion.identity);
-                Fragment Frag = Child.GetComponent<Fragment>();
+                Vector3 localPosition = polygon.Centroid.Loc + projectedShift + transform.position;
+                //Vector3 WorldPosition = transform.InverseTransformPoint(localPosition);
+				GameObject Child = Instantiate<GameObject>(FragmentPrefab, localPosition, transform.rotation);
+				Fragment Frag = Child.GetComponent<Fragment>();
                 Frag.Generate(polygon, objectSize.y);
 
                 Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));

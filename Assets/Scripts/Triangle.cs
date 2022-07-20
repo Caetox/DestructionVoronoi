@@ -48,8 +48,6 @@ public class Triangle
 
     private void UpdateCircumcircle()
     {
-        // https://codefound.wordpress.com/2013/02/21/how-to-compute-a-circumcircle/#more-58
-        // https://en.wikipedia.org/wiki/Circumscribed_circle
         var p0 = Vertices[0].Loc;
         var p1 = Vertices[1].Loc;
         var p2 = Vertices[2].Loc;
@@ -68,7 +66,7 @@ public class Triangle
             RadiusSquared = (center.x - p0.x) * (center.x - p0.x) + (center.z - p0.z) * (center.z - p0.z);
         }
     }
-	Vector3 GetNormal(Point point1, Point point2, Point point3)
+	private Vector3 GetNormal(Point point1, Point point2, Point point3)
 	{
 		Vector3 side1 = point2.Loc - point1.Loc;
 		Vector3 side2 = point3.Loc - point1.Loc;

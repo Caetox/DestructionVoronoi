@@ -90,6 +90,15 @@ public class Fragment : MonoBehaviour
 			triangles[triangleIndex++] = IndexOffset + 2 + (i * 2);
 			triangles[triangleIndex++] = IndexOffset + 3 + (i * 2);
 			triangles[triangleIndex++] = IndexOffset + 1 + (i * 2);
+
+			Vector3 normal = Polygon.CalcNormal(vertices[IndexOffset + 2 + (i * 2)], vertices[IndexOffset + 1 + (i * 2)], vertices[IndexOffset + 0 + (i * 2)]);
+
+			normals[IndexOffset + 2 + (i * 2)] = normal;
+			normals[IndexOffset + 1 + (i * 2)] = normal;
+			normals[IndexOffset + 0 + (i * 2)] = normal;
+			normals[IndexOffset + 2 + (i * 2)] = normal;
+			normals[IndexOffset + 3 + (i * 2)] = normal;
+			normals[IndexOffset + 1 + (i * 2)] = normal;
 		}
 
 

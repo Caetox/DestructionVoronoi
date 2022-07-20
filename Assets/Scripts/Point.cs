@@ -10,15 +10,10 @@ public class Point
     public Vector3 Loc;
 	public Vector2 Uv;
 
-	//public float X { get; }
-    //public float Y { get; }
     public HashSet<Triangle> AdjacentTriangles { get; } = new HashSet<Triangle>();
 
     public Point(float x, float z)
     {
-        //X = x;
-        //Y = z;
-
         Loc = new Vector3((float)x, 0, (float)z);
 		Uv = new Vector2((float)x, (float)z);
 	}

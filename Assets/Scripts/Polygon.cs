@@ -78,7 +78,7 @@ public class Polygon
 		Edges = SortedEdges;
 	}
 
-	Vector3 CalcNormal(Vector3 edgeA, Vector3 edgeB, Vector3 edgeC)
+	static public Vector3 CalcNormal(Vector3 edgeA, Vector3 edgeB, Vector3 edgeC)
 	{
 		Vector3 side1 = edgeB - edgeA;
 		Vector3 side2 = edgeC - edgeA;
