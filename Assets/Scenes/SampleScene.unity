@@ -510,6 +510,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   number_of_seeds: 80
   clustering_Factor: 7
+  FragmentPrefab: {fileID: 7204323885748338746, guid: 2ece55461c6d3fb40b907989bf07d708, type: 3}
 --- !u!1 &2012938531
 GameObject:
   m_ObjectHideFlags: 0

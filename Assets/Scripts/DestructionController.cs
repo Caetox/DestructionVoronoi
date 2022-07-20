@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-using DelaunayVoronoi;
-
 public class DestructionController : MonoBehaviour
 {
     public int number_of_seeds = 50;
     public int clustering_Factor = 5; // higher value -> seeds are closer to contact point
 
+    public GameObject FragmentPrefab;
 
     private Vector2 objectSize;
     private Vector2 shift;
@@ -36,15 +35,21 @@ public class DestructionController : MonoBehaviour
         var triangulation = delaunay.BowyerWatson(seeds, shift);
 
         // construct voronoi diagram
-        var voronoiEdges = voronoi.GenerateEdgesFromDelaunay(triangulation);
+        var polygons = voronoi.GenerateEdgesFromDelaunay(triangulation);
 
         // translate edges to original position
-        var shiftedVoronoiEdges = new List<Edge>();
-        foreach (var edge in voronoiEdges) {
-            var e1 = new Point(edge.Point1.X + shift.x, edge.Point1.Y + shift.y);
-            var e2 = new Point(edge.Point2.X + shift.x, edge.Point2.Y + shift.y);
-            var shiftedVoronoiEdge = new Edge(e1, e2);
-            shiftedVoronoiEdges.Add(shiftedVoronoiEdge);
+        foreach (var polygon in polygons)
+        {
+            GameObject Child = Instantiate<GameObject>(FragmentPrefab, new Vector3(0,0,0), Quaternion.identity);
+            Fragment Frag = Child.GetComponent<Fragment>();
+            Frag.Generate(polygon);
+
+            for (int i = 0; i < polygon.Edges.Count; ++i)
+			{
+				var e1 = new Point(polygon.Edges[i].Point1.X + shift.x, polygon.Edges[i].Point1.Y + shift.y);
+				var e2 = new Point(polygon.Edges[i].Point2.X + shift.x, polygon.Edges[i].Point2.Y + shift.y);
+                polygon.Edges[i] = new Edge(e1, e2);
+			}
         }
 
         // visualization of delaunay triangulation
@@ -67,10 +72,14 @@ public class DestructionController : MonoBehaviour
         }
 
         // visualization of voronoi edges
-        foreach (var edge in shiftedVoronoiEdges) {
-            Debug.DrawLine(new Vector3((float)edge.Point1.X, 0.1f, (float)edge.Point1.Y),new Vector3((float)edge.Point2.X, 0.1f, (float)edge.Point2.Y), Color.white, 100f);
+        foreach (var polygon in polygons)
+        {
+            foreach (var edge in polygon.Edges)
+            {
+                Debug.DrawLine(new Vector3((float)edge.Point1.X, 0.1f, (float)edge.Point1.Y), new Vector3((float)edge.Point2.X, 0.1f, (float)edge.Point2.Y), Color.white, 100f);
+            }
         }
 
-    }
+	}
 
 }
