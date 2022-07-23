@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-struct Particle
+public class Particle
 {
     public Vector3 Pos;
     public Quaternion Rot;
     public int NumVertices;
     public int Offset;
     public Vector3 Vel;
+	public Vector3 Acc;
 
-    public Particle(Vector3 pos, Quaternion rot, int numVertices, int offset)
+	public Particle(Vector3 pos, Quaternion rot, Vector3 acc, int numVertices, int offset)
 	{
         Pos = pos;
         Rot = rot;
         NumVertices = numVertices;
         Offset = offset;
-        Vel = new Vector3();
+		Vel = new Vector3();
+		Acc = acc;
 	}
 }
 
@@ -25,11 +27,14 @@ struct Particle
 public class DestructionController : MonoBehaviour
 {
     public int number_of_seeds = 50;
-    public int clustering_Factor = 5; // higher value -> seeds are closer to contact point
+	public int number_of_gameObjects = 10;
+	public int clustering_Factor = 5; // higher value -> seeds are closer to contact point
 
     public GameObject FragmentPrefab;
 
-    private Vector3 objectSize;
+	public bool instantiate_game_objects;
+
+	private Vector3 objectSize;
 	private Vector2 shift;
     private DelaunayTriangulator delaunay = new DelaunayTriangulator();
     private Voronoi voronoi = new Voronoi();
@@ -37,18 +42,23 @@ public class DestructionController : MonoBehaviour
 	private List<GameObject> ObjectPool;
 
     private List<Particle> Particles;
+	private List<Polygon> Polygons;
+
+	public GameObject WallObject;
 
 	void Start() {
-        BoxCollider collider = gameObject.GetComponent<BoxCollider>();
-        objectSize = new Vector3(collider.size.x * transform.localScale.x, collider.size.y * transform.localScale.y, collider.size.z * transform.localScale.z);
-        shift = new Vector2(objectSize.x * 0.5f, objectSize.z * 0.5f);
+		objectSize = WallObject.transform.localScale;
+		shift = new Vector2(objectSize.x * 0.5f, objectSize.z * 0.5f);
 
-        ObjectPool = new List<GameObject>();
-        for (int i = 0; i < number_of_seeds; ++i)
+		if (instantiate_game_objects && FragmentPrefab != null)
 		{
-            GameObject obj = Instantiate<GameObject>(FragmentPrefab, transform.position, transform.rotation);
-            ObjectPool.Add(obj);
-        }
+			ObjectPool = new List<GameObject>();
+			for (int i = 0; i < number_of_seeds; ++i)
+			{
+				GameObject obj = Instantiate<GameObject>(FragmentPrefab, transform.position, transform.rotation);
+				ObjectPool.Add(obj);
+			}
+		}
     }
 
 
@@ -62,33 +72,33 @@ public class DestructionController : MonoBehaviour
             return;
 		}
 
-        Vector3 collisionPosition = transform.InverseTransformPoint(collision.contacts[0].point);
-        collisionPosition = new Vector3(collisionPosition.x * transform.localScale.x, collisionPosition.y * transform.localScale.y, collisionPosition.z * transform.localScale.z);
+        Vector3 collisionPosition = WallObject.transform.InverseTransformPoint(collision.contacts[0].point);
 
-        //Debug.DrawLine(collisionPosition, collisionPosition + new Vector3(0, 1, 0), Color.red, 100.0f);
-        // location of collision
-        var contactPoint = new Vector2(collisionPosition.x + shift.x, collisionPosition.z + shift.y);
+		// location of collision
+		var contactPoint = new Vector2(collisionPosition.x * objectSize.x, collisionPosition.z * objectSize.z);
 
-        // generate seeds
-        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, -shift);
+		// generate seeds
+		var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, -shift);
 
         // run delaunay triangulation
         var triangulation = delaunay.BowyerWatson(seeds, -shift);
 
-        // construct voronoi diagram
-        var polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation);
+		// construct voronoi diagram
+		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation);
 
 		// Generates particles using game objects
-		if (false)
+		if (instantiate_game_objects)
 		{
-			//GenerateFragments(polygons, -shift, objectSize);
+			GenerateFragments(Polygons, -shift, objectSize);
+		}
+		else
+		{
+			// Generates own particle structure
+			GenerateFragmentParticles(Polygons, collision.contacts[0].otherCollider.transform.position, collision.impulse);
+			GenerateMesh(objectSize);
 		}
 
-		// Generates own particle structure
-		{
-			GenerateMesh(polygons, objectSize);
-			GenerateFragmentParticles(polygons);
-		}
+		Destroy(WallObject);
 
 		// visualization of delaunay triangulation
 		//var shiftedTriangulation = new HashSet<Triangle>();
@@ -132,14 +142,16 @@ public class DestructionController : MonoBehaviour
 		{
             if (polygon.IsValid)
             {
-                Vector3 localPosition = polygon.Centroid.Loc + projectedShift + transform.position;
-                //Vector3 WorldPosition = transform.InverseTransformPoint(localPosition);
-                //GameObject Child = Instantiate<GameObject>(FragmentPrefab, localPosition, transform.rotation);
-                GameObject Child = ObjectPool[poolIndex++];
+
+				Quaternion WallRotation = WallObject.transform.rotation;
+				Vector3 localPosition = polygon.Centroid.Loc;
+				Vector3 worldPosition = WallRotation * localPosition;
+				worldPosition += WallObject.transform.position;
+				GameObject Child = ObjectPool[poolIndex++];
                 if (Child != null)
                 {
-                    Child.transform.position = localPosition;
-                    Child.transform.rotation = transform.rotation;
+                    Child.transform.position = worldPosition;
+                    Child.transform.rotation = WallObject.transform.rotation;
                     Fragment Frag = Child.GetComponent<Fragment>();
                     Frag.Generate(polygon, objectSize.y);
 
@@ -151,7 +163,7 @@ public class DestructionController : MonoBehaviour
         Destroy(gameObject);
     }
 
-    void GenerateMesh(IEnumerable<Polygon> polygons, Vector3 objectSize)
+    void GenerateMesh(Vector3 objectSize)
     {
         float depth = objectSize.y;
 
@@ -162,13 +174,18 @@ public class DestructionController : MonoBehaviour
 
         // Count edges
         int OverallEdgeCount = 0;
-        foreach (var polygon in polygons)
+        foreach (var polygon in Polygons)
         {
             if (polygon.IsValid)
             {
                 OverallEdgeCount += polygon.Edges.Count;
             }
         }
+
+		if (OverallEdgeCount == 0)
+		{
+			return;
+		}
 
         // Create buffers
 		Vector3[] vertices = new Vector3[OverallEdgeCount * 4];
@@ -183,19 +200,26 @@ public class DestructionController : MonoBehaviour
 
 		// Generate vertices
 		int OverallIndexOffset = 0;
-		foreach (var polygon in polygons)
+		for (int k = 0; k < Particles.Count; ++k)
         {
+			Particle particle = Particles[k];
+			Polygon polygon = Polygons[k];
             if (polygon.IsValid)
             {
+
+
                 int EdgeCount = polygon.Edges.Count;
 
 				// Front
 
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					vertices[vertexIndex++] = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
-					normals[normalIndex++] = -Vector3.forward;
-					uv[uvIndex++] = polygon.Edges[i].Point2.Uv / 10.0f;
+					Vector3 vecPos = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
+					vecPos = particle.Rot * vecPos;
+					vecPos += particle.Pos;
+					vertices[vertexIndex++] = vecPos;
+					normals[normalIndex++] = particle.Rot * -Vector3.forward;
+					uv[uvIndex++] = polygon.Edges[i].Point2.Uv;
 				}
 
 				for (int i = 0; i < EdgeCount - 2; ++i)
@@ -209,9 +233,12 @@ public class DestructionController : MonoBehaviour
 				Vector3 depthVec = new Vector3(0, -depth, 0);
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					vertices[vertexIndex++] = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc + depthVec;
-					normals[normalIndex++] = Vector3.forward;
-					uv[uvIndex++] = polygon.Edges[i].Point2.Uv / 10.0f;
+					Vector3 vecPos = polygon.Edges[i].Point2.Loc + depthVec - polygon.Centroid.Loc;
+					vecPos = particle.Rot * vecPos;
+					vecPos += particle.Pos;
+					vertices[vertexIndex++] = vecPos;
+					normals[normalIndex++] = particle.Rot * Vector3.forward;
+					uv[uvIndex++] = polygon.Edges[i].Point2.Uv;
 				}
 
 				for (int i = 0; i < EdgeCount - 2; ++i)
@@ -225,8 +252,14 @@ public class DestructionController : MonoBehaviour
 
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					vertices[vertexIndex++] = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
-					vertices[vertexIndex++] = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc + depthVec;
+					Vector3 vecPosA = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
+					vecPosA = particle.Rot * vecPosA;
+					vecPosA += particle.Pos;
+					Vector3 vecPosB = polygon.Edges[i].Point2.Loc + depthVec - polygon.Centroid.Loc;
+					vecPosB = particle.Rot * vecPosB;
+					vecPosB += particle.Pos;
+					vertices[vertexIndex++] = vecPosA;
+					vertices[vertexIndex++] = vecPosB;
 					normals[normalIndex++] = Vector3.forward;
 					normals[normalIndex++] = Vector3.forward;
 
@@ -245,7 +278,7 @@ public class DestructionController : MonoBehaviour
 					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 3 + (i * 2);
 					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 1 + (i * 2);
 
-					Vector3 normal = Polygon.CalcNormal(vertices[IndexOffset + 2 + (i * 2)], vertices[IndexOffset + 1 + (i * 2)], vertices[IndexOffset + 0 + (i * 2)]);
+					Vector3 normal = particle.Rot * Polygon.CalcNormal(vertices[IndexOffset + 2 + (i * 2)], vertices[IndexOffset + 1 + (i * 2)], vertices[IndexOffset + 0 + (i * 2)]);
 
 					normals[IndexOffset + 2 + (i * 2)] = normal;
 					normals[IndexOffset + 1 + (i * 2)] = normal;
@@ -255,7 +288,15 @@ public class DestructionController : MonoBehaviour
 					normals[IndexOffset + 1 + (i * 2)] = normal;
 				}
 
-				OverallIndexOffset += EdgeCount;
+				// Debug
+				//Vector3 testoffset = new Vector3(0, Random.Range(-0.01f, 0.01f), 0);
+				//Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+				//for (int i = 1; i < EdgeCount; ++i)
+				//{
+				//	Debug.DrawLine(vertices[OverallIndexOffset + i] + testoffset, vertices[OverallIndexOffset + i - 1] + testoffset, randomColor, 100f);
+				//}
+
+				OverallIndexOffset = vertexIndex;
 			}
         }
 
@@ -265,21 +306,23 @@ public class DestructionController : MonoBehaviour
 		mesh.uv = uv;
 		mesh.normals = normals;
 		mesh.triangles = triangles;
-
 		meshFilter.mesh = mesh;
-
-		//meshCollider.sharedMesh = mesh;
-
-
 	}
 
-	void GenerateFragmentParticles(IEnumerable<Polygon> polygons)
+	void GenerateFragmentParticles(IEnumerable<Polygon> polygons, Vector3 impactPoint, Vector3 impulse)
     {
 		Particles = new List<Particle>();
 
 		foreach (var polygon in polygons)
         {
-			Particle p = new Particle(polygon.Centroid.Loc, transform.rotation, polygon.Edges.Count, 0);
+			Quaternion WallRotation = WallObject.transform.rotation;
+			Vector3 localPosition = polygon.Centroid.Loc;
+			Vector3 worldPosition = WallRotation * localPosition;
+			Vector3 dir = (polygon.Centroid.Loc - impactPoint);
+			float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
+			Vector3 acc = (new Vector3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z) * 10.0f - (impulse * distance)) * 0.20f;
+			acc += new Vector3(UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f)) * 100.0f;
+			Particle p = new Particle(worldPosition, WallObject.transform.rotation, acc, polygon.Edges.Count, 0);
 			Particles.Add(p);
         }
     }
@@ -288,12 +331,18 @@ public class DestructionController : MonoBehaviour
 	{
 		if (Particles != null)
 		{
+			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
+			float linearDamping = 0.0001f;
+			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
 			{
 				Particle p = Particles[i];
-				p.Pos = Particles[i].Vel;
+				p.Pos += Particles[i].Vel * delta;
+				p.Vel += (Particles[i].Acc + gravity) * delta;
+				p.Acc *= linearDamping;
 			}
+			GenerateMesh(objectSize);
 		}
 	}
 

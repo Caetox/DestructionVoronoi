@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Voronoi
 {
-    public IEnumerable<Polygon> GenerateEdgesFromDelaunay(IEnumerable<Point> points, IEnumerable<Triangle> triangulation)
+    public List<Polygon> GenerateEdgesFromDelaunay(IEnumerable<Point> points, IEnumerable<Triangle> triangulation)
     {
 		List<Polygon> polygons = new List<Polygon>();
 
