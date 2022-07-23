@@ -19,7 +19,7 @@ public class DelaunayTriangulator
 		return mean + stddev * randStdNormal;
 }
 
-    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector3 objectSize, int clustering_Factor, Vector2 shift)
+    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector3 objectSize, int radius, Vector2 shift)
     {
 		MinX = -0.5f * objectSize.x;
 		MinY = -0.5f * objectSize.z;
@@ -33,8 +33,8 @@ public class DelaunayTriangulator
 		    var angle = 2.0f * Mathf.PI * UnityEngine.Random.value;
 
 		    Vector2 seed = contactPoint + new Vector2(
-				dist * Mathf.Cos(angle) * (float)MaxX/clustering_Factor,
-				dist * Mathf.Sin(angle) * (float)MaxY/clustering_Factor);
+				dist * Mathf.Cos(angle) * (float)radius,
+				dist * Mathf.Sin(angle) * (float)radius);
                 
             if ((seed.x >= MinX) && (seed.x <= MaxX) && (seed.y >= MinY) && (seed.y <= MaxY)) {
                 points.Add(new Point(seed.x, seed.y));

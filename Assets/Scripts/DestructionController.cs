@@ -77,8 +77,12 @@ public class DestructionController : MonoBehaviour
 		// location of collision
 		var contactPoint = new Vector2(collisionPosition.x * objectSize.x, collisionPosition.z * objectSize.z);
 
-		// generate seeds
-		var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, -shift);
+        // generate seeds
+        var impulse = Mathf.Abs((collision.impulse.x + collision.impulse.y + collision.impulse.z) / Time.fixedDeltaTime);
+        var mass = (int)collision.rigidbody.mass;
+        number_of_seeds = (int)impulse/100;
+        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, mass, -shift);
+		Debug.Log("Impulse: " + impulse + "    mass: " + mass + "     number of seeds: " + number_of_seeds);
 
         // run delaunay triangulation
         var triangulation = delaunay.BowyerWatson(seeds, -shift);
