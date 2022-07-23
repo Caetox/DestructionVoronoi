@@ -43,29 +43,26 @@ public class Triangle
         Vertices[0].AdjacentTriangles.Add(this);
         Vertices[1].AdjacentTriangles.Add(this);
         Vertices[2].AdjacentTriangles.Add(this);
-        UpdateCircumcircle();
-    }
 
-    private void UpdateCircumcircle()
-    {
-        var p0 = Vertices[0].Loc;
-        var p1 = Vertices[1].Loc;
-        var p2 = Vertices[2].Loc;
-        var dA = p0.x * p0.x + p0.z * p0.z;
-        var dB = p1.x * p1.x + p1.z * p1.z;
-        var dC = p2.x * p2.x + p2.z * p2.z;
+		var p0 = Vertices[0].Loc;
+		var p1 = Vertices[1].Loc;
+		var p2 = Vertices[2].Loc;
+		var dA = p0.x * p0.x + p0.z * p0.z;
+		var dB = p1.x * p1.x + p1.z * p1.z;
+		var dC = p2.x * p2.x + p2.z * p2.z;
 
-        var aux1 = (dA * (p2.z - p1.z) + dB * (p0.z - p2.z) + dC * (p1.z - p0.z));
-        var aux2 = -(dA * (p2.x - p1.x) + dB * (p0.x - p2.x) + dC * (p1.x - p0.x));
-        var div = (2 * (p0.x * (p2.z - p1.z) + p1.x * (p0.z - p2.z) + p2.x * (p1.z - p0.z)));
+		var aux1 = (dA * (p2.z - p1.z) + dB * (p0.z - p2.z) + dC * (p1.z - p0.z));
+		var aux2 = -(dA * (p2.x - p1.x) + dB * (p0.x - p2.x) + dC * (p1.x - p0.x));
+		var div = (2 * (p0.x * (p2.z - p1.z) + p1.x * (p0.z - p2.z) + p2.x * (p1.z - p0.z)));
 
-        if (Mathf.Abs(div) > 0)
-        {
-            var center = new Vector3(aux1 / div, 0, aux2 / div);
-            Circumcenter = new Point(center.x, center.z);
-            RadiusSquared = (center.x - p0.x) * (center.x - p0.x) + (center.z - p0.z) * (center.z - p0.z);
-        }
-    }
+		if (Mathf.Abs(div) > 0)
+		{
+			var center = new Vector3(aux1 / div, 0, aux2 / div);
+			Circumcenter = new Point(center.x, center.z);
+			RadiusSquared = (center.x - p0.x) * (center.x - p0.x) + (center.z - p0.z) * (center.z - p0.z);
+		}
+	}
+
 	private Vector3 GetNormal(Point point1, Point point2, Point point3)
 	{
 		Vector3 side1 = point2.Loc - point1.Loc;

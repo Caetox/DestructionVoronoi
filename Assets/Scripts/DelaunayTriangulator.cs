@@ -76,7 +76,7 @@ public class DelaunayTriangulator
             }
         }
 
-		// remove border triangles
+		//remove border triangles
 		HashSet<Triangle> borderTriangles = new HashSet<Triangle>();
 		foreach (var triangle in triangulation)
 		{
