@@ -144,7 +144,7 @@ public class DestructionController : MonoBehaviour
         Vector3 projectedShift = new Vector3(shift.x, 0, shift.y);
 		foreach (var polygon in polygons)
 		{
-            if (polygon.IsValid)
+            if (polygon != null && polygon.IsValid)
             {
 
 				Quaternion WallRotation = WallObject.transform.rotation;
@@ -165,7 +165,7 @@ public class DestructionController : MonoBehaviour
                 }
             }
 		}
-        //Destroy(gameObject);
+        Destroy(gameObject);
     }
 
     void GenerateMesh(Vector3 objectSize)
