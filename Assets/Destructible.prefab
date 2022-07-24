@@ -84,6 +84,9 @@ MonoBehaviour:
   FragmentPrefab: {fileID: 7204323885748338746, guid: 2ece55461c6d3fb40b907989bf07d708, type: 3}
   instantiate_game_objects: 1
   WallObject: {fileID: 5425060946375833454}
+  WallMaterial: {fileID: 2100000, guid: 1eb78a1a690ca6b49b260c5838f087a1, type: 2}
+  SideMaterial: {fileID: 2100000, guid: 151c7073a034aaa46adcdb58b6580385, type: 2}
+  debugging: 0
 --- !u!23 &3188750085762612552
 MeshRenderer:
   m_ObjectHideFlags: 0
