@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-
+using UnityEngine.Profiling;
 public class Particle
 {
     public Vector3 Pos;
@@ -42,9 +42,14 @@ public class DestructionController : MonoBehaviour
 	private List<GameObject> ObjectPool;
 
     private List<Particle> Particles;
-	private List<Polygon> Polygons;
+	private Polygon[] Polygons;
 
 	public GameObject WallObject;
+
+	public Material WallMaterial;
+	public Material SideMaterial;
+
+	public bool debugging;
 
 	void Start() {
 		objectSize = WallObject.transform.localScale;
@@ -78,14 +83,17 @@ public class DestructionController : MonoBehaviour
 		var contactPoint = new Vector2(collisionPosition.x * objectSize.x, collisionPosition.z * objectSize.z);
 
 		// generate seeds
+		Profiler.BeginSample("Seeds");
 		var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, clustering_Factor, -shift);
-
-        // run delaunay triangulation
-        var triangulation = delaunay.BowyerWatson(seeds, -shift);
-
+		Profiler.EndSample();
+		// run delaunay triangulation
+		Profiler.BeginSample("Delaunay");
+		var triangulation = delaunay.BowyerWatson(seeds, -shift);
+		Profiler.EndSample();
 		// construct voronoi diagram
-		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation);
-
+		Profiler.BeginSample("Voronoi");
+		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds);
+		Profiler.EndSample();
 		// Generates particles using game objects
 		if (instantiate_game_objects)
 		{
@@ -93,45 +101,39 @@ public class DestructionController : MonoBehaviour
 		}
 		else
 		{
+			Profiler.BeginSample("Meshes");
 			// Generates own particle structure
 			GenerateFragmentParticles(Polygons, collision.contacts[0].otherCollider.transform.position, collision.impulse);
 			GenerateMesh(objectSize);
+			Profiler.EndSample();
 		}
 
 		Destroy(WallObject);
 
-		// visualization of delaunay triangulation
-		//var shiftedTriangulation = new HashSet<Triangle>();
-		//foreach (var triangle in triangulation) {
-		//    var p1 = new Point(triangle.Vertices[0].X + shift.x, triangle.Vertices[0].Y + shift.y);
-		//    var p2 = new Point(triangle.Vertices[1].X + shift.x, triangle.Vertices[1].Y + shift.y);
-		//    var p3 = new Point(triangle.Vertices[2].X + shift.x, triangle.Vertices[2].Y + shift.y);
-		//    var shiftedTriangle = new Triangle(p1, p2, p3);
-		//    shiftedTriangulation.Add(shiftedTriangle);
-		//}
-		var shiftedEdges = new List<Edge>();
-		foreach (var shiftedTriangle in triangulation)
+		if (debugging)
 		{
-			shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[0], shiftedTriangle.Vertices[1]));
-			shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[1], shiftedTriangle.Vertices[2]));
-			shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[2], shiftedTriangle.Vertices[0]));
+			//visualization of delaunay triangulation
+			var shiftedTriangulation = new HashSet<Triangle>();
+			foreach (var triangle in triangulation)
+			{
+				var p1 = new Point(triangle.Vertices[0].Loc.x + shift.x, triangle.Vertices[0].Loc.z + shift.y);
+				var p2 = new Point(triangle.Vertices[1].Loc.x + shift.x, triangle.Vertices[1].Loc.z + shift.y);
+				var p3 = new Point(triangle.Vertices[2].Loc.x + shift.x, triangle.Vertices[2].Loc.z + shift.y);
+				var shiftedTriangle = new Triangle(p1, p2, p3);
+				shiftedTriangulation.Add(shiftedTriangle);
+			}
+			var shiftedEdges = new List<Edge>();
+			foreach (var shiftedTriangle in triangulation)
+			{
+				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[0], shiftedTriangle.Vertices[1]));
+				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[1], shiftedTriangle.Vertices[2]));
+				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[2], shiftedTriangle.Vertices[0]));
+			}
+			foreach (var shiftedEdge in shiftedEdges)
+			{
+				Debug.DrawLine(new Vector3((float)shiftedEdge.Point1.Loc.x, 0.1f, (float)shiftedEdge.Point1.Loc.z), new Vector3((float)shiftedEdge.Point2.Loc.x, 0.1f, (float)shiftedEdge.Point2.Loc.z), Color.grey, 100f);
+			}
 		}
-		foreach (var shiftedEdge in shiftedEdges) {
-            Debug.DrawLine(new Vector3((float)shiftedEdge.Point1.Loc.x, 0.1f, (float)shiftedEdge.Point1.Loc.z),new Vector3((float)shiftedEdge.Point2.Loc.x, 0.1f, (float)shiftedEdge.Point2.Loc.z), Color.grey, 100f);
-        }
-
-        // visualization of voronoi edges
-        //foreach (var polygon in polygons)
-        //{
-        //    foreach (var edge in polygon.Edges)
-        //    {
-        //        Debug.DrawLine(new Vector3((float)edge.Point1.X, 0.1f, (float)edge.Point1.Y), new Vector3((float)edge.Point2.X, 0.1f, (float)edge.Point2.Y), Color.white, 100f);
-        //    }
-        //}
-
-        // Update own mesh
-
-        
     }
 
     void GenerateFragments(IEnumerable<Polygon> polygons, Vector2 shift, Vector3 objectSize)
@@ -157,10 +159,11 @@ public class DestructionController : MonoBehaviour
 
                     Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
                     Child.GetComponent<Rigidbody>().AddForce(RandomForce * 100.0f);
+					Child.GetComponent<MeshRenderer>().material = WallMaterial;
                 }
             }
 		}
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 
     void GenerateMesh(Vector3 objectSize)
@@ -176,7 +179,7 @@ public class DestructionController : MonoBehaviour
         int OverallEdgeCount = 0;
         foreach (var polygon in Polygons)
         {
-            if (polygon.IsValid)
+            if (polygon != null && polygon.IsValid)
             {
                 OverallEdgeCount += polygon.Edges.Count;
             }
@@ -307,6 +310,7 @@ public class DestructionController : MonoBehaviour
 		mesh.normals = normals;
 		mesh.triangles = triangles;
 		meshFilter.mesh = mesh;
+		meshRenderer.material = WallMaterial;
 	}
 
 	void GenerateFragmentParticles(IEnumerable<Polygon> polygons, Vector3 impactPoint, Vector3 impulse)
@@ -314,16 +318,19 @@ public class DestructionController : MonoBehaviour
 		Particles = new List<Particle>();
 
 		foreach (var polygon in polygons)
-        {
-			Quaternion WallRotation = WallObject.transform.rotation;
-			Vector3 localPosition = polygon.Centroid.Loc;
-			Vector3 worldPosition = WallRotation * localPosition;
-			Vector3 dir = (polygon.Centroid.Loc - impactPoint);
-			float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-			Vector3 acc = (new Vector3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z) * 10.0f - (impulse * distance)) * 0.20f;
-			acc += new Vector3(UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f)) * 100.0f;
-			Particle p = new Particle(worldPosition, WallObject.transform.rotation, acc, polygon.Edges.Count, 0);
-			Particles.Add(p);
+		{
+			if (polygon != null)
+			{
+				Quaternion WallRotation = WallObject.transform.rotation;
+				Vector3 localPosition = polygon.Centroid.Loc;
+				Vector3 worldPosition = WallRotation * localPosition;
+				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
+				float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
+				Vector3 acc = (new Vector3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z) * 10.0f - (impulse * distance)) * 0.20f;
+				acc += new Vector3(UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f)) * 100.0f;
+				Particle p = new Particle(worldPosition, WallObject.transform.rotation, acc, polygon.Edges.Count, 0);
+				Particles.Add(p);
+			}
         }
     }
 

@@ -28,6 +28,7 @@ public class DelaunayTriangulator
 
         var points = new List<Point>() {};
 
+        int pointIndex = 0;
 		for (int i = 0; i < amount; i++) {
 		    var dist = Mathf.Abs(NormalizedRandom(0.2f, 1.0f/2.0f));
 		    var angle = 2.0f * Mathf.PI * UnityEngine.Random.value;
@@ -37,7 +38,7 @@ public class DelaunayTriangulator
 				dist * Mathf.Sin(angle) * (float)MaxY/clustering_Factor);
                 
             if ((seed.x >= MinX) && (seed.x <= MaxX) && (seed.y >= MinY) && (seed.y <= MaxY)) {
-                points.Add(new Point(seed.x, seed.y));
+                points.Add(new Point(seed.x, seed.y, pointIndex++));
             }
 		}
 

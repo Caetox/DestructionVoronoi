@@ -5,10 +5,11 @@ using UnityEngine;
 public class Point
 {
     private static int IndexCounter;
-    private readonly int ID = IndexCounter++;
+    public readonly int ID = IndexCounter++;
 
     public Vector3 Loc;
 	public Vector2 Uv;
+    public int Index;
 
     public HashSet<Triangle> AdjacentTriangles { get; } = new HashSet<Triangle>();
 
@@ -18,7 +19,14 @@ public class Point
 		Uv = new Vector2((float)x, (float)z);
 	}
 
-    public bool Equals(Point other)
+	public Point(float x, float z, int index)
+	{
+		Loc = new Vector3((float)x, 0, (float)z);
+		Uv = new Vector2((float)x, (float)z);
+        Index = index;
+	}
+
+	public bool Equals(Point other)
     {
         return other.ID == ID;
     }

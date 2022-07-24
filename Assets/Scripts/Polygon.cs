@@ -36,7 +36,10 @@ public class Polygon
 			{
 				if (last.Equals(Edges[j].Point1) && !lastOpposite.Equals(Edges[j].Point2))
 				{
-					SortedEdges.Add(Edges[j]);
+					if ((Edges[j].Point1.Loc - Edges[j].Point2.Loc).sqrMagnitude > 0.0001f)
+					{
+						SortedEdges.Add(Edges[j]);
+					}
 					break;
 				}
 				// Check for flipped edges
@@ -44,36 +47,32 @@ public class Polygon
 				else if (last.Equals(Edges[j].Point2) && !lastOpposite.Equals(Edges[j].Point1))
 				{
 					// Flip edge
-					Edge FlippedEdge = new Edge(Edges[j].Point2, Edges[j].Point1);
-					SortedEdges.Add(FlippedEdge);
+					if ((Edges[j].Point1.Loc - Edges[j].Point2.Loc).sqrMagnitude > 0.0001f)
+					{
+						Edge FlippedEdge = new Edge(Edges[j].Point2, Edges[j].Point1);
+						SortedEdges.Add(FlippedEdge);
+					}
 					break;
 				}
 			}
 		}
 
-		for (int i = SortedEdges.Count - 1; i > 0; --i)
-		{
-			if ((SortedEdges[i].Point1.Loc - SortedEdges[i].Point2.Loc).magnitude < 0.0001f)
-			{
-				SortedEdges.RemoveAt(i);
-			}
-		}
-
 		// Check for winding order
-		if (SortedEdges.Count >= 3)
+		if (SortedEdges.Count < 3)
 		{
-			//Debug.Log("Using:");
-			//Debug.Log(SortedEdges[0].Point1.Loc.ToString());
-			//Debug.Log(SortedEdges[0].Point2.Loc.ToString());
-			//Debug.Log(SortedEdges[1].Point2.Loc.ToString());
-
-			//Debug.Log(CalcNormal(SortedEdges[0].Point1.Loc, SortedEdges[0].Point2.Loc, SortedEdges[1].Point2.Loc).ToString());
-			if (CalcNormal(SortedEdges[0].Point1.Loc, SortedEdges[0].Point2.Loc, SortedEdges[1].Point2.Loc).y > 0)
-			{
-				SortedEdges.Reverse();
-			}
-			IsValid = true;
+			return;
 		}
+		//Debug.Log("Using:");
+		//Debug.Log(SortedEdges[0].Point1.Loc.ToString());
+		//Debug.Log(SortedEdges[0].Point2.Loc.ToString());
+		//Debug.Log(SortedEdges[1].Point2.Loc.ToString());
+
+		//Debug.Log(CalcNormal(SortedEdges[0].Point1.Loc, SortedEdges[0].Point2.Loc, SortedEdges[1].Point2.Loc).ToString());
+		if (CalcNormal(SortedEdges[0].Point1.Loc, SortedEdges[0].Point2.Loc, SortedEdges[1].Point2.Loc).y > 0)
+		{
+			SortedEdges.Reverse();
+		}
+		IsValid = true;
 
 		Edges = SortedEdges;
 	}
