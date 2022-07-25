@@ -16,7 +16,6 @@ public class Particle
 	public float Mass;
 	public float InvMass;
 
-	public Particle(Vector3 pos, Quaternion rot, Vector3 acc, float mass, int numVertices, int offset)
 	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset)
 	{
         Pos = pos;
@@ -24,7 +23,6 @@ public class Particle
         NumVertices = numVertices;
         Offset = offset;
 		Vel = new Vector3();
-		Acc = acc;
 		Acc = new Vector3();
 		AngularVel = new Vector3();
 		AngularMomentum = new Vector3();
@@ -34,7 +32,6 @@ public class Particle
 
 	public void ApplyForce(Vector3 Location, Vector3 Force)
 	{
-		Acc += Force;
 		Acc += Force * InvMass;
 
 		// Torque
@@ -106,11 +103,8 @@ public class DestructionController : MonoBehaviour
 
         // generate seeds
         var impulse = Mathf.Abs((collision.impulse.x + collision.impulse.y + collision.impulse.z) / Time.fixedDeltaTime);
-        var mass = (int)collision.rigidbody.mass;
         WallMass = (int)collision.rigidbody.mass;
         number_of_seeds = (int)impulse/100;
-        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, mass);
-		Debug.Log("Impulse: " + impulse + "    mass: " + mass + "     number of seeds: " + number_of_seeds);
         var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, WallMass);
 		Debug.Log("Impulse: " + impulse + "    mass: " + WallMass + "     number of seeds: " + number_of_seeds);
 
@@ -365,8 +359,6 @@ public class DestructionController : MonoBehaviour
 				Vector3 worldPosition = WallRotation * localPosition;
 				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
 				float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-				Vector3 acc = new Vector3();
-				Particle p = new Particle(worldPosition, WallObject.transform.rotation, acc, polygon.Surface * objectSize.y, polygon.Edges.Count, 0);
 				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0);
 				Particles.Add(p);
 
@@ -380,8 +372,6 @@ public class DestructionController : MonoBehaviour
 		if (Particles != null)
 		{
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
-			float linearDamping = 0.0001f;
-			float angularDamping = 0.0005f;
 			float linearDamping = 0.01f;
 			float angularDamping = 0.0001f;
 			float delta = Time.deltaTime;
@@ -389,10 +379,8 @@ public class DestructionController : MonoBehaviour
 			for (int i = 0; i < numParticles; ++i)
 			{
 				Particle p = Particles[i];
-				p.Pos += Particles[i].Vel * delta;
 
 				p.Vel += (Particles[i].Acc + gravity) * delta;
-				p.Acc *= linearDamping;
 				p.Vel *= Mathf.Pow(1.0f - linearDamping, delta);
 				p.Pos += Particles[i].Vel * delta;
 				
