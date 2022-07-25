@@ -25,18 +25,20 @@ public class Particle
 		Vel = new Vector3();
 		Acc = acc;
 		AngularVel = new Vector3();
-		AngularMomentum = new Vector3();// UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1)) * 5.0f;
+		AngularMomentum = new Vector3();
 		Mass = mass;
 		InvMass = 1.0f / Mass;
 	}
 
-	void AddForceAtPoint(Vector3 Location, Vector3 Force)
+	public void ApplyForce(Vector3 Location, Vector3 Force)
 	{
 		Acc += Force;
 
 		// Torque
 		Vector3 Arm = Location - Pos;
 		Vector3 Torque = Vector3.Cross(Arm, Force);
+
+		AngularMomentum += Torque * InvMass;
 	}
 }
 
@@ -345,10 +347,11 @@ public class DestructionController : MonoBehaviour
 				Vector3 worldPosition = WallRotation * localPosition;
 				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
 				float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-				Vector3 acc = (new Vector3(1.0f / dir.x, 1.0f / dir.y, 1.0f / dir.z) * 10.0f - (impulse * distance)) * 0.20f;
-				acc += new Vector3(UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f), UnityEngine.Random.Range(-1.0f, 1.0f)) * 200.0f;
+				Vector3 acc = new Vector3();
 				Particle p = new Particle(worldPosition, WallObject.transform.rotation, acc, polygon.Surface * objectSize.y, polygon.Edges.Count, 0);
 				Particles.Add(p);
+
+				p.ApplyForce(impactPoint, -impulse);
 			}
         }
     }
@@ -359,7 +362,7 @@ public class DestructionController : MonoBehaviour
 		{
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 			float linearDamping = 0.0001f;
-			float angularDamping = 0.0001f;
+			float angularDamping = 0.0005f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
@@ -374,13 +377,10 @@ public class DestructionController : MonoBehaviour
 				Quaternion spin2 = new Quaternion(spin.x * 0.5f, spin.y * 0.5f, spin.z * 0.5f, spin.w * 0.5f);
 				p.Rot = new Quaternion(p.Rot.x + spin.x, p.Rot.y + spin.y, p.Rot.z + spin.z, p.Rot.w + spin.w);
 				p.Rot.Normalize();
-				//if (i == 0)
-				//{
-				//	Debug.Log("1:" + spin2.ToEulerAngles());
-				//}
 
 				p.AngularVel += p.AngularMomentum;
-				p.AngularMomentum *= angularDamping;
+				p.AngularVel *= angularDamping;
+				p.AngularMomentum = new Vector3();
 			}
 			GenerateMesh(objectSize);
 		}
