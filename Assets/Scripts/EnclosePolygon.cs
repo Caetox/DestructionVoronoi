@@ -32,6 +32,8 @@ public class EnclosePolygon //: MonoBehaviour
         result.IsValid = true;
         result.Surface = input.Surface;
         int countIntersections = 0;
+		result.anchored = input.anchored;
+		int countIntersections = 0;
 
         // create a new list of enclosed points, and then create new edge list afterwards
         // corner handling comes at the end
@@ -88,6 +90,7 @@ public class EnclosePolygon //: MonoBehaviour
 
         // if less than two points are inside the boundaries, return empty polygon
         if (enclosedPoints.Count < 2){
+            result.IsValid = false;
             return result;
         } 
 

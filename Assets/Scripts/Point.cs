@@ -20,6 +20,7 @@ public class Point
     {
         Loc = new Vector3((float)x, 0, (float)z);
 		Uv = new Vector2((float)x, (float)z);
+        Index = 0;
 	}
 
 	public Point(float x, float z, int index)
