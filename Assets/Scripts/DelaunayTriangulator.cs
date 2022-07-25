@@ -89,11 +89,15 @@ public class DelaunayTriangulator
 			{
 				if (((triangle.Vertices[0] == point) || (triangle.Vertices[1] == point) || (triangle.Vertices[2] == point)))
 				{
-					borderTriangles.Add(triangle);
+					//borderTriangles.Add(triangle);
+                    triangle.Vertices[0].anchored = true;
+                    triangle.Vertices[1].anchored = true;
+                    triangle.Vertices[2].anchored = true;
 				}
 			}
 		}
-		triangulation.RemoveWhere(o => borderTriangles.Contains(o));
+
+		/* triangulation.RemoveWhere(o => borderTriangles.Contains(o));
 
 		foreach (var triangle in borderTriangles)
 		{
@@ -101,7 +105,8 @@ public class DelaunayTriangulator
 			{
 				vertex.AdjacentTriangles.Remove(triangle);
 			}
-		}
+		} */
+
 		return triangulation;
     }
 

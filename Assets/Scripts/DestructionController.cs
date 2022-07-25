@@ -186,10 +186,18 @@ public class DestructionController : MonoBehaviour
                     Fragment Frag = Child.GetComponent<Fragment>();
                     Frag.Generate(polygon, objectSize.y, WallMaterial, SideMaterial);
 
-                    Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
+				if (!polygon.anchored)
+				{
+					Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
 					Child.GetComponent<Rigidbody>().mass = polygon.Surface * objectSize.y;
 					Child.GetComponent<Rigidbody>().AddForce(RandomForce * 100.0f);
-					Child.GetComponent<MeshRenderer>().material = WallMaterial;
+				}
+				else 
+				{
+					Destroy(Child.GetComponent<Rigidbody>());
+				}
+                    
+				Child.GetComponent<MeshRenderer>().material = WallMaterial;
                 }
             }
 		}

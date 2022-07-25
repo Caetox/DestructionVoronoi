@@ -10,6 +10,7 @@ public class Polygon
 		Centroid = Center;
 		Edges = new List<Edge>();
 		IsValid = false;
+		anchored = Centroid.anchored;
 	}
 
 	public List<Edge> Edges;
@@ -17,6 +18,7 @@ public class Polygon
 	public bool IsValid;
 	public float Circumference;
 	public float Surface;
+	public bool anchored;
 
 	public void Sort()
 	{
