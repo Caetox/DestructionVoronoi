@@ -10,6 +10,7 @@ public class Point
     public Vector3 Loc;
 	public Vector2 Uv;
     public int Index;
+    public bool Corner = false;
 
     public HashSet<Triangle> AdjacentTriangles { get; } = new HashSet<Triangle>();
 
