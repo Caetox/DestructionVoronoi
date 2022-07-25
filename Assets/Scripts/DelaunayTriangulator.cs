@@ -54,6 +54,10 @@ public class DelaunayTriangulator
         var point3 = new Point(MaxX, MinY);
         var tri1 = new Triangle(point0, point1, point2);
         var tri2 = new Triangle(point0, point2, point3);
+        point0.Corner = true;
+        point1.Corner = true;
+        point2.Corner = true;
+		point3.Corner = true;
 
         IEnumerable<Triangle> border = new List<Triangle>() { tri1, tri2 };
         List<Point> bounds = new List<Point>() { point0, point1, point2, point3 };

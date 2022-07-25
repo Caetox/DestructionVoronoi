@@ -23,11 +23,30 @@ public class Voronoi
                 Edge edge = null;
                 // Find the vertices that both triangles share
                 for (int i = 0; i < 3; ++i)
+                bool cornerA = neighbor.Vertices[0].Corner;
+                bool cornerB = neighbor.Vertices[1].Corner;
+				bool cornerC = neighbor.Vertices[2].Corner;
+				for (int i = 0; i < 3; ++i)
                 {
                     if (triangle.Vertices[i].AdjacentTriangles.Contains(neighbor))
                     {
                         if (edge == null)
                             edge = new Edge(triangle.Circumcenter, neighbor.Circumcenter);
+                        {
+                            if (cornerA || cornerB || cornerC)
+                            {
+                                if (cornerA)
+                                    edge = new Edge(triangle.Circumcenter, neighbor.Vertices[0]);
+								if (cornerB)
+									edge = new Edge(triangle.Circumcenter, neighbor.Vertices[1]);
+								if (cornerC)
+									edge = new Edge(triangle.Circumcenter, neighbor.Vertices[2]);
+							}
+                            else
+                            {
+                                edge = new Edge(triangle.Circumcenter, neighbor.Circumcenter);
+                            }
+                        }
                         // Add edges to the related polygons
                         polys[triangle.Vertices[i].Index].Edges.Add(edge);
                     }
