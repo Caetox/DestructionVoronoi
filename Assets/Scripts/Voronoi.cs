@@ -22,7 +22,6 @@ public class Voronoi
             {
                 Edge edge = null;
                 // Find the vertices that both triangles share
-                for (int i = 0; i < 3; ++i)
                 bool cornerA = neighbor.Vertices[0].Corner;
                 bool cornerB = neighbor.Vertices[1].Corner;
 				bool cornerC = neighbor.Vertices[2].Corner;
@@ -31,7 +30,6 @@ public class Voronoi
                     if (triangle.Vertices[i].AdjacentTriangles.Contains(neighbor))
                     {
                         if (edge == null)
-                            edge = new Edge(triangle.Circumcenter, neighbor.Circumcenter);
                         {
                             if (cornerA || cornerB || cornerC)
                             {
