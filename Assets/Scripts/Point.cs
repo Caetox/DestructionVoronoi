@@ -11,6 +11,8 @@ public class Point
 	public Vector2 Uv;
     public int Index;
     public bool Corner = false;
+    public bool anchored;
+
 
     public HashSet<Triangle> AdjacentTriangles { get; } = new HashSet<Triangle>();
 
