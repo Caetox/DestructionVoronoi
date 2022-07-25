@@ -25,6 +25,10 @@ public class Fragment : MonoBehaviour
 		Mesh mesh = new Mesh();
 
 		int EdgeCount = Data.Edges.Count;
+		if (EdgeCount == 0)
+		{
+			return;
+		}
 
 		Vector3[] vertices = new Vector3[EdgeCount * 4];
 		Vector3[] normals = new Vector3[EdgeCount * 4];
