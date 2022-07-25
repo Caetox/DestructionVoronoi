@@ -29,6 +29,7 @@ public class EnclosePolygon //: MonoBehaviour
         }
         Debug.Log("polygon is not null.");
         Polygon result = new Polygon(input.Centroid);
+        result.IsValid = true;
         int countIntersections = 0;
 
         // create a new list of enclosed points, and then create new edge list afterwards
