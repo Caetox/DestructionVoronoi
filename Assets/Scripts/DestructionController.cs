@@ -56,6 +56,7 @@ public class DestructionController : MonoBehaviour
 	private Vector3 objectSize;
     private DelaunayTriangulator delaunay = new DelaunayTriangulator();
     private Voronoi voronoi = new Voronoi();
+	private EnclosePolygon enclose = new EnclosePolygon();
 
 	private List<GameObject> ObjectPool;
 
@@ -113,6 +114,16 @@ public class DestructionController : MonoBehaviour
 		Profiler.BeginSample("Voronoi");
 		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds);
 		Profiler.EndSample();
+		// cut off polygons at the boundaries
+		Debug.Log("object dimensions: " +(float)-0.5 * objectSize.x + " " + (float)0.5 * objectSize.x + " " + (float)-0.5 * objectSize.z + " " + (float)0.5 * objectSize.z);
+		for (int i = 0; i < Polygons.Length; i++)
+		{
+			if (Polygons[i] != null && Polygons[i].IsValid)
+			{
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -1000.0f, 1000.0f, -1000.0f, 1000.0f);
+				Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+			}
+		}
 		// Generates particles using game objects
 		if (instantiate_game_objects)
 		{

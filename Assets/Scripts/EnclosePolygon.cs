@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EnclosePolygon : MonoBehaviour
+public class EnclosePolygon //: MonoBehaviour
 {
     // Start is called before the first frame update
     void Start()
@@ -16,140 +16,143 @@ public class EnclosePolygon : MonoBehaviour
         
     }
 
-    // call this method in line 50
-    public Polygon enclosePolygon(Polygon input,float minX,float maxX,float minZ,float maxZ){
+    public EnclosePolygon()
+    {
+
+    }
+
+    public Polygon enclosePoly(Polygon input, float minX, float maxX, float minZ, float maxZ){
         // prepare new result polygon
         List<Point> enclosedPoints = new List<Point>();
+        if (input == null){
+            return null;
+        }
+        Debug.Log("polygon is not null.");
         Polygon result = new Polygon(input.Centroid);
+        result.IsValid = true;
+        int countIntersections = 0;
 
         // create a new list of enclosed points, and then create new edge list afterwards
-        // every combination of Point1 or Point2 inside or outside needs different handling 
         // corner handling comes at the end
 
         foreach (Edge e in input.Edges){
 
-            // order of operation matters for edges that start and end outside the boundaries
             // 1) add intersections of edges and boundaries
-            // 1.1) edges that start outside and end inside
             // minX handling
-            if (e.Point1.x < minX){
-                if (e.Point2.x < minX){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point1.y - e.Point2.y) / (e.Point1.x - e.Point2.x);
-                    float y = e.Point1.y + ((minX - e.Point1.x) * m);
-                    Point intersection = new Point(minX, y);
+            if ((e.Point1.Loc.x < minX) ^ (e.Point2.Loc.x < minX)){
+                float m = (e.Point1.Loc.z - e.Point2.Loc.z) / (e.Point1.Loc.x - e.Point2.Loc.x);
+                float z = e.Point1.Loc.z + ((minX - e.Point1.Loc.x) * m);
+                if (z < maxZ && z > minZ){
+                    Point intersection = new Point(minX, z);
                     enclosedPoints.Add(intersection);
+                    countIntersections++;
                 }
             }
-            // maxY handling
-            if (e.Point1.y > maxY){
-                if (e.Point2.y > maxY){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point1.x - e.Point2.x) / (e.Point1.y - e.Point2.y);
-                    float x = e.Point2.x + ((maxY - e.Point2.y) * m);
-                    Point intersection = new Point(x, maxY);
+            // maxZ handling
+            if ((e.Point1.Loc.z > maxZ) ^ (e.Point2.Loc.z > maxZ)){
+                float m = (e.Point1.Loc.x - e.Point2.Loc.x) / (e.Point1.Loc.z - e.Point2.Loc.z);
+                float x = e.Point2.Loc.x + ((maxZ - e.Point2.Loc.z) * m);
+                if (x < maxX && x > minX){
+                    Point intersection = new Point(x, maxZ);
                     enclosedPoints.Add(intersection);
+                    countIntersections++;
                 }
             }
             // maxX handling
-            if (e.Point1.x > maxX){
-                if (e.Point2.x > maxX){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point1.y - e.Point2.y) / (e.Point1.x - e.Point2.x);
-                    float y = e.Point2.y + ((maxX - e.Point2.x) * m);
-                    Point intersection = new Point(maxX, y);
+            if ((e.Point1.Loc.x > maxX) ^ (e.Point2.Loc.x > maxX)){
+                float m = (e.Point1.Loc.z - e.Point2.Loc.z) / (e.Point1.Loc.x - e.Point2.Loc.x);
+                float z = e.Point2.Loc.z + ((maxX - e.Point2.Loc.x) * m);
+                if (z < maxZ && z > minZ){
+                    Point intersection = new Point(maxX, z);
                     enclosedPoints.Add(intersection);
+                    countIntersections++;
                 }
             }
-            // minY handling
-            if (e.Point1.y < minY){
-                if (e.Point2.y < minY){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point2.x - e.Point1.x) / (e.Point2.y - e.Point1.y);
-                    float x = e.Point1.x + ((minY - e.Point1.y) * m);
-                    Point intersection = new Point(x, maxY);
+            // minZ handling
+            if  ((e.Point1.Loc.z < minZ) ^ (e.Point2.Loc.z < minZ)){
+                float m = (e.Point2.Loc.x - e.Point1.Loc.x) / (e.Point2.Loc.z - e.Point1.Loc.z);
+                float x = e.Point1.Loc.x + ((minZ - e.Point1.Loc.z) * m);
+                if (x < maxX && x > minX){
+                    Point intersection = new Point(x, maxZ);
                     enclosedPoints.Add(intersection);
+                    countIntersections++;
                 }
             }
 
-            
-            // 1.2) edges that start inside and end outisde
-            if (e.Point2.x < minX){
-                if (e.Point1.x < minX){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point2.y - e.Point1.y) / (e.Point2.x - e.Point1.x);
-                    float y = e.Point2.y + ((minX - e.Point2.x) * m);
-                    Point intersection = new Point(minX, y);
-                    enclosedPoints.Add(intersection);
-                }
-            }
-            // maxY handling
-            if (e.Point2.y > maxY){
-                if (e.Point1.y > maxY){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point2.x - e.Point1.x) / (e.Point2.y - e.Point1.y);
-                    float x = e.Point1.x + ((maxY - e.Point1.y) * m);
-                    Point intersection = new Point(x, maxY);
-                    enclosedPoints.Add(intersection);
-                }
-            }
-            // maxX handling
-            if (e.Point2.x > maxX){
-                if (e.Point1.x > maxX){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point2.y - e.Point1.y) / (e.Point2.x - e.Point1.x);
-                    float y = e.Point1.y + ((maxX - e.Point1.x) * m);
-                    Point intersection = new Point(maxX, y);
-                    enclosedPoints.Add(intersection);
-                }
-            }
-            // minY handling
-            if (e.Point2.y < minY){
-                if (e.Point1.y < minY){
-                    // both points outisde, ignore edge
-                }
-                else {
-                    // intersection exits
-                    float m = (e.Point1.x - e.Point2.x) / (e.Point1.y - e.Point2.y);
-                    float x = e.Point2.x + ((minY - e.Point2.y) * m);
-                    Point intersection = new Point(x, maxY);
-                    enclosedPoints.Add(intersection);
-                }
-            }
-
-
-            if (e.Point2.x < maxX && e.Point2.y < maxY && e.Point2.x > minX && e.Point2.y > minY){
-                enclosedPoints.add(e.Point2);
+            // 2) add old points inside the boundaries to new list of points
+            if (e.Point2.Loc.x < maxX && e.Point2.Loc.z < maxZ && e.Point2.Loc.x > minX && e.Point2.Loc.z > minZ){
+                enclosedPoints.Add(e.Point2);
             }
         }
-        // 2) create new list of edges
-        /*
-        for(int i = 0; i < enclosedPoints.){
 
+        // if less than two points are inside the boundaries, return empty polygon
+        if (enclosedPoints.Count < 2){
+            return result;
+        } 
+
+        // 3) add corner points 
+        // assume that the area is fragmented enough, so that no polygon covers more than one corner
+        // also assume that polygons are defined clockwise
+        // if a point is on the edge and the next point is on the next clockwise edge, add a corner point
+        if (countIntersections == 2){
+            // connection between last and first point needs extra handling
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.x == minX){
+                if (enclosedPoints[0].Loc.z == maxZ){
+                    enclosedPoints.Add(new Point(minX, maxZ));
+                }
+            }
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.z == maxZ){
+                if (enclosedPoints[0].Loc.x == maxX){
+                    enclosedPoints.Add(new Point(maxX, maxZ));
+                }
+            }
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.x == maxX){
+                if (enclosedPoints[0].Loc.z == minZ){
+                    enclosedPoints.Add(new Point(maxX, minZ));
+                }
+            }
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.z == minZ){
+                if (enclosedPoints[0].Loc.x == minX){
+                    enclosedPoints.Add(new Point(minX, minZ));
+                }
+            }
+
+            // handling for normal points
+            for (int i = 0; i < enclosedPoints.Count - 1; i++){
+                if (enclosedPoints[i].Loc.x == minX){
+                    if (enclosedPoints[i + 1].Loc.z == maxZ){
+                        enclosedPoints.Add(new Point(minX, maxZ));
+                    }
+                }
+                if (enclosedPoints[i].Loc.z == maxZ){
+                    if (enclosedPoints[i + 1].Loc.x == maxX){
+                        enclosedPoints.Add(new Point(maxX, maxZ));
+                    }
+                }
+                if (enclosedPoints[i].Loc.x == maxX){
+                    if (enclosedPoints[i + 1].Loc.z == minZ){
+                        enclosedPoints.Add(new Point(maxX, minZ));
+                    }
+                }
+                if (enclosedPoints[i].Loc.z == minZ){
+                    if (enclosedPoints[i + 1].Loc.x == minX){
+                        enclosedPoints.Add(new Point(minX, minZ));
+                    }
+                }
+            }
         }
-        result.add(new Edge())
-        */
-        return enclosePolygon;
+
+        // 4) create new list of edges
+        // start with the loop around to make the order of the edges line up with the input
+        if ((enclosedPoints[enclosedPoints.Count - 1].Loc.x != enclosedPoints[0].Loc.x) && (enclosedPoints[enclosedPoints.Count - 1].Loc.z != enclosedPoints[0].Loc.z)){
+            result.Edges.Add(new Edge(enclosedPoints[enclosedPoints.Count - 1], enclosedPoints[0]));
+        }
+        for(int i = 0; i < enclosedPoints.Count - 1; i++){
+            result.Edges.Add(new Edge(enclosedPoints[i], enclosedPoints[i+1]));
+        }
+        foreach (Edge e in result.Edges){
+            Debug.Log("Point1: " + e.Point1.Loc.ToString() + "\nPoint2: " + e.Point2.Loc.ToString());
+        }
+        return result;
     }
 }
