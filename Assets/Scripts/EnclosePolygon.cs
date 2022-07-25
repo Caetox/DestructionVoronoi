@@ -24,6 +24,10 @@ public class EnclosePolygon //: MonoBehaviour
     public Polygon enclosePoly(Polygon input, float minX, float maxX, float minZ, float maxZ){
         // prepare new result polygon
         List<Point> enclosedPoints = new List<Point>();
+        if (input == null){
+            return null;
+        }
+        Debug.Log("polygon is not null.");
         Polygon result = new Polygon(input.Centroid);
         int countIntersections = 0;
 
@@ -91,22 +95,22 @@ public class EnclosePolygon //: MonoBehaviour
         // if a point is on the edge and the next point is on the next clockwise edge, add a corner point
         if (countIntersections == 2){
             // connection between last and first point needs extra handling
-            if (enclosedPoints[enclosedPoints.Count].Loc.x == minX){
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.x == minX){
                 if (enclosedPoints[0].Loc.z == maxZ){
                     enclosedPoints.Add(new Point(minX, maxZ));
                 }
             }
-            if (enclosedPoints[enclosedPoints.Count].Loc.z == maxZ){
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.z == maxZ){
                 if (enclosedPoints[0].Loc.x == maxX){
                     enclosedPoints.Add(new Point(maxX, maxZ));
                 }
             }
-            if (enclosedPoints[enclosedPoints.Count].Loc.x == maxX){
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.x == maxX){
                 if (enclosedPoints[0].Loc.z == minZ){
                     enclosedPoints.Add(new Point(maxX, minZ));
                 }
             }
-            if (enclosedPoints[enclosedPoints.Count].Loc.z == minZ){
+            if (enclosedPoints[enclosedPoints.Count - 1].Loc.z == minZ){
                 if (enclosedPoints[0].Loc.x == minX){
                     enclosedPoints.Add(new Point(minX, minZ));
                 }
@@ -139,9 +143,12 @@ public class EnclosePolygon //: MonoBehaviour
 
         // 4) create new list of edges
         // start with the loop around to make the order of the edges line up with the input
-        result.Edges.Add(new Edge(enclosedPoints[enclosedPoints.Count], enclosedPoints[0]));
+        result.Edges.Add(new Edge(enclosedPoints[enclosedPoints.Count - 1], enclosedPoints[0]));
         for(int i = 0; i < enclosedPoints.Count - 1; i++){
             result.Edges.Add(new Edge(enclosedPoints[i], enclosedPoints[i+1]));
+        }
+        foreach (Edge e in result.Edges){
+            Debug.Log(e.Point1.Loc.x + " " + e.Point1.Loc.y + " " + e.Point2.Loc.x + " " + e.Point2.Loc.y);
         }
         return result;
     }

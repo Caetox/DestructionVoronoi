@@ -99,8 +99,10 @@ public class DestructionController : MonoBehaviour
 		Profiler.EndSample();
 		// make sure the polygons stay within boundaries
 		for (int i = 0; i < Polygons.Length; i++){
-			Polygons[i] = enclose.enclosePoly(Polygons[i], -100.0f, -100.0f, 100.0f, 100.0f);
-			//Polygons[i] = enclose.enclosePoly(Polygons[i], (float)-0.5 * objectSize[0], (float)0.5 * objectSize[0], (float)-0.5 * objectSize[2], (float)0.5 * objectSize[2]);
+			if (Polygons[i] != null){
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -100.0f, -100.0f, 100.0f, 100.0f);
+				Polygons[i] = enclose.enclosePoly(Polygons[i], (float)-0.5 * objectSize.x, (float)0.5 * objectSize.x, (float)-0.5 * objectSize.z, (float)0.5 * objectSize.z);
+			}
 		}
 		// Generates particles using game objects
 		if (instantiate_game_objects)
