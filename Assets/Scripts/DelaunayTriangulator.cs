@@ -19,7 +19,7 @@ public class DelaunayTriangulator
 		return mean + stddev * randStdNormal;
 }
 
-    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector3 objectSize, int radius, Vector2 shift)
+    public IEnumerable<Point> GenerateClusteredPoints(Vector2 contactPoint, int amount, Vector3 objectSize, float radius)
     {
 		MinX = -0.5f * objectSize.x;
 		MinY = -0.5f * objectSize.z;
@@ -34,8 +34,8 @@ public class DelaunayTriangulator
 		    var angle = 2.0f * Mathf.PI * UnityEngine.Random.value;
 
 		    Vector2 seed = contactPoint + new Vector2(
-				dist * Mathf.Cos(angle) * (float)radius,
-				dist * Mathf.Sin(angle) * (float)radius);
+				dist * Mathf.Cos(angle) * radius,
+				dist * Mathf.Sin(angle) * radius);
                 
             if ((seed.x >= MinX) && (seed.x <= MaxX) && (seed.y >= MinY) && (seed.y <= MaxY)) {
                 points.Add(new Point(seed.x, seed.y, pointIndex++));
@@ -46,7 +46,7 @@ public class DelaunayTriangulator
             
     }
 
-    public IEnumerable<Triangle> BowyerWatson(IEnumerable<Point> points, Vector2 shift)
+    public IEnumerable<Triangle> BowyerWatson(IEnumerable<Point> points)
     {
         var point0 = new Point(MinX, MinY);
         var point1 = new Point(MinX, MaxY);

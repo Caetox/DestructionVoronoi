@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class Fragment : MonoBehaviour
 {
@@ -16,7 +17,7 @@ public class Fragment : MonoBehaviour
         
     }
 
-    public void Generate(Polygon Data, float depth)
+    public void Generate(Polygon Data, float depth, Material FrontMat, Material SideMat)
 	{
 		MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
 		MeshFilter meshFilter = GetComponent<MeshFilter>();
@@ -67,8 +68,9 @@ public class Fragment : MonoBehaviour
 			triangles[triangleIndex++] = EdgeCount + (2 + i);
 		}
 
-		// Sides
+		int FirstSubmeshLength = triangleIndex;
 
+		// Sides
 		for (int i = 0; i < EdgeCount; ++i)
 		{
 			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc;
@@ -76,8 +78,8 @@ public class Fragment : MonoBehaviour
 			normals[normalIndex++] = Vector3.forward;
 			normals[normalIndex++] = Vector3.forward;
 
-			float u = (float)i / (float)EdgeCount;
-			uv[uvIndex++] = new Vector2(u, 1.0f);
+			float u = ((float)i / (float)EdgeCount) * 5.0f;
+			uv[uvIndex++] = new Vector2(u, depth);
 			uv[uvIndex++] = new Vector2(u, 0.0f);
 		}
 
@@ -112,14 +114,21 @@ public class Fragment : MonoBehaviour
 
 		
 
-		// Apply
 
+		// Apply
 		mesh.vertices = vertices;
 		mesh.uv = uv;
 		mesh.normals = normals;
 		mesh.triangles = triangles;
 
 		meshFilter.mesh = mesh;
+
+		mesh.subMeshCount = 2;
+		mesh.SetSubMesh(0, new SubMeshDescriptor(0, FirstSubmeshLength));
+		mesh.SetSubMesh(1, new SubMeshDescriptor(FirstSubmeshLength, triangleIndex - FirstSubmeshLength));
+
+		Material[] Mats = { FrontMat, SideMat };
+		meshRenderer.materials = Mats;
 
 		meshCollider.sharedMesh = mesh;
 	}

@@ -15,6 +15,8 @@ public class Polygon
 	public List<Edge> Edges;
 	public Point Centroid;
 	public bool IsValid;
+	public float Circumference;
+	public float Surface;
 
 	public void Sort()
 	{
@@ -75,6 +77,17 @@ public class Polygon
 		IsValid = true;
 
 		Edges = SortedEdges;
+
+		Circumference = 0;
+		Surface = 0;
+		for (int i = 1; i < Edges.Count; ++i)
+		{
+			Vector3 a = Edges[i].Point1.Loc;
+			Vector3 b = Edges[i].Point2.Loc;
+			//Circumference += Vector3.Distance(a, b);
+			Surface += Mathf.Abs(a.x * b.z - b.x * a.z);
+		}
+		Surface *= 0.5f;
 	}
 
 	static public Vector3 CalcNormal(Vector3 edgeA, Vector3 edgeB, Vector3 edgeC)
