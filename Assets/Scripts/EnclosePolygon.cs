@@ -143,12 +143,14 @@ public class EnclosePolygon //: MonoBehaviour
 
         // 4) create new list of edges
         // start with the loop around to make the order of the edges line up with the input
-        result.Edges.Add(new Edge(enclosedPoints[enclosedPoints.Count - 1], enclosedPoints[0]));
+        if ((enclosedPoints[enclosedPoints.Count - 1].Loc.x != enclosedPoints[0].Loc.x) && (enclosedPoints[enclosedPoints.Count - 1].Loc.z != enclosedPoints[0].Loc.z)){
+            result.Edges.Add(new Edge(enclosedPoints[enclosedPoints.Count - 1], enclosedPoints[0]));
+        }
         for(int i = 0; i < enclosedPoints.Count - 1; i++){
             result.Edges.Add(new Edge(enclosedPoints[i], enclosedPoints[i+1]));
         }
         foreach (Edge e in result.Edges){
-            Debug.Log(e.Point1.Loc.x + " " + e.Point1.Loc.y + " " + e.Point2.Loc.x + " " + e.Point2.Loc.y);
+            Debug.Log("Point1: " + e.Point1.Loc.ToString() + "\nPoint2: " + e.Point2.Loc.ToString());
         }
         return result;
     }

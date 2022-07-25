@@ -97,10 +97,11 @@ public class DestructionController : MonoBehaviour
 		Profiler.BeginSample("Voronoi");
 		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds);
 		Profiler.EndSample();
-		// make sure the polygons stay within boundaries
+		// cut off polygons at the boundaries
+		Debug.Log("object dimensions: " +(float)-0.5 * objectSize.x + " " + (float)0.5 * objectSize.x + " " + (float)-0.5 * objectSize.z + " " + (float)0.5 * objectSize.z);
 		for (int i = 0; i < Polygons.Length; i++){
 			if (Polygons[i] != null){
-				//Polygons[i] = enclose.enclosePoly(Polygons[i], -100.0f, -100.0f, 100.0f, 100.0f);
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -1000.0f, 1000.0f, -1000.0f, 1000.0f);
 				Polygons[i] = enclose.enclosePoly(Polygons[i], (float)-0.5 * objectSize.x, (float)0.5 * objectSize.x, (float)-0.5 * objectSize.z, (float)0.5 * objectSize.z);
 			}
 		}
