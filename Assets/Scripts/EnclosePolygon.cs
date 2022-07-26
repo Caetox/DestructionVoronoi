@@ -33,7 +33,6 @@ public class EnclosePolygon //: MonoBehaviour
         result.Surface = input.Surface;
         int countIntersections = 0;
 		result.anchored = input.anchored;
-		int countIntersections = 0;
 
         // create a new list of enclosed points, and then create new edge list afterwards
         // corner handling comes at the end
