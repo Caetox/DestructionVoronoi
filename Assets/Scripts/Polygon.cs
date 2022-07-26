@@ -11,6 +11,7 @@ public class Polygon
 		Edges = new List<Edge>();
 		IsValid = false;
 		anchored = Centroid.anchored;
+		ParticleIndex = -1;
 	}
 
 	public List<Edge> Edges;
@@ -19,6 +20,7 @@ public class Polygon
 	public float Circumference;
 	public float Surface;
 	public bool anchored;
+	public int ParticleIndex;
 
 	public void Sort(Vector3 Scale)
 	{

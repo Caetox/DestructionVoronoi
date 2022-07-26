@@ -18,7 +18,7 @@ public class Particle
 	public bool IsStatic;
 	public float Lifetime;
 
-	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset, bool isStatic)
+	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset, bool isStatic, float lifetime)
 	{
         Pos = pos;
         Rot = rot;
@@ -31,6 +31,7 @@ public class Particle
 		Mass = mass;
 		InvMass = 1.0f / Mass;
 		IsStatic = isStatic;
+		Lifetime = lifetime;
 	}
 
 	public void ApplyForce(Vector3 Location, Vector3 Force)
@@ -54,7 +55,8 @@ public class DestructionController : MonoBehaviour
 
     public GameObject FragmentPrefab;
 
-	public bool instantiate_game_objects;
+	public bool instantiateGameObjects;
+	public bool instantiateParticles;
 
 	private Vector3 objectSize;
     private DelaunayTriangulator delaunay = new DelaunayTriangulator();
@@ -74,12 +76,14 @@ public class DestructionController : MonoBehaviour
 
 	public Vector2 Stretching = new Vector2(1,1);
 
+	public float ParticleThreshold = 1.0f;
+
 	public bool debugging;
 
 	void Start() {
 		objectSize = WallObject.transform.localScale;
 
-		if (instantiate_game_objects && FragmentPrefab != null)
+		if (instantiateGameObjects && FragmentPrefab != null)
 		{
 			ObjectPool = new List<GameObject>();
 			for (int i = 0; i < number_of_seeds; ++i)
@@ -129,16 +133,17 @@ public class DestructionController : MonoBehaviour
 		{
 			if (Polygons[i] != null && Polygons[i].IsValid)
 			{
-				//Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+				Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
 				//Polygons[i].Sort(objectSize);
 			}
 		}
 		// Generates particles using game objects
-		if (instantiate_game_objects)
+		if (instantiateGameObjects)
 		{
 			GenerateFragments(Polygons, objectSize);
 		}
-		else
+		
+		if (instantiateParticles)
 		{
 			Profiler.BeginSample("Meshes");
 			// Generates own particle structure
@@ -171,7 +176,7 @@ public class DestructionController : MonoBehaviour
         int poolIndex = 0;
 		foreach (var polygon in polygons)
 		{
-            if (polygon != null && polygon.IsValid)
+            if (polygon != null && polygon.IsValid && polygon.Surface > ParticleThreshold)
             {
 				//Debug.Log("P" + polygon.Edges.Count);
 				//Debug.Log(polygon.Centroid.Index);
@@ -204,13 +209,15 @@ public class DestructionController : MonoBehaviour
                 }
             }
 		}
-        Destroy(gameObject);
+        //Destroy(gameObject);
     }
 
     void GenerateMesh(Vector3 objectSize)
     {
-		Vector2 uvScale = new Vector2(1.0f / objectSize.x, 1.0f / objectSize.z);
+		Vector2 uvScale = new Vector2(1.0f / objectSize.x, -1.0f / objectSize.z);
 		float depth = objectSize.y;
+		Vector3 depthVec = new Vector3(0, -depth, 0);
+		Vector3 halfDepthVec = new Vector3(0, depth * 0.5f, 0);
 
 		MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
 		MeshFilter meshFilter = GetComponent<MeshFilter>();
@@ -221,7 +228,7 @@ public class DestructionController : MonoBehaviour
         int OverallEdgeCount = 0;
         foreach (var polygon in Polygons)
         {
-            if (polygon != null && polygon.IsValid)
+			if (polygon != null && polygon.IsValid && polygon.ParticleIndex != -1)
             {
                 OverallEdgeCount += polygon.Edges.Count;
             }
@@ -245,26 +252,27 @@ public class DestructionController : MonoBehaviour
 
 		// Generate vertices
 		int OverallIndexOffset = 0;
-		for (int k = 0; k < Particles.Count; ++k)
-        {
-			Particle particle = Particles[k];
-			Polygon polygon = Polygons[k];
-            if (polygon.IsValid)
+		//for (int k = 0; k < Particles.Count; ++k)
+		foreach (var polygon in Polygons)
+		{
+			//Particle particle = Particles[k];
+			//Polygon polygon = Polygons[k];
+            if (polygon != null && polygon.IsValid && polygon.ParticleIndex != -1)
             {
+				Particle particle = Particles[polygon.ParticleIndex];
 
-
-                int EdgeCount = polygon.Edges.Count;
+				int EdgeCount = polygon.Edges.Count;
 
 				// Front
 
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					Vector3 vecPos = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
+					Vector3 vecPos = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc + halfDepthVec;
 					vecPos = particle.Rot * vecPos;
 					vecPos += particle.Pos;
 					vertices[vertexIndex++] = vecPos;
-					normals[normalIndex++] = particle.Rot * -Vector3.forward;
-					uv[uvIndex++] = polygon.Edges[i].Point2.Uv * uvScale;
+					normals[normalIndex++] = particle.Rot * Vector3.up;
+					uv[uvIndex++] = (polygon.Edges[i].Point2.Uv * uvScale) + new Vector2(0.5f, 0.5f);
 				}
 
 				for (int i = 0; i < EdgeCount - 2; ++i)
@@ -275,15 +283,14 @@ public class DestructionController : MonoBehaviour
 				}
 
 				// Back
-				Vector3 depthVec = new Vector3(0, -depth, 0);
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					Vector3 vecPos = polygon.Edges[i].Point2.Loc + depthVec - polygon.Centroid.Loc;
+					Vector3 vecPos = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc - halfDepthVec;
 					vecPos = particle.Rot * vecPos;
 					vecPos += particle.Pos;
 					vertices[vertexIndex++] = vecPos;
-					normals[normalIndex++] = particle.Rot * Vector3.forward;
-					uv[uvIndex++] = polygon.Edges[i].Point2.Uv * uvScale;
+					normals[normalIndex++] = particle.Rot * -Vector3.up;
+					uv[uvIndex++] = (polygon.Edges[i].Point2.Uv * uvScale) + new Vector2(0.5f, 0.5f);
 				}
 
 				for (int i = 0; i < EdgeCount - 2; ++i)
@@ -297,10 +304,10 @@ public class DestructionController : MonoBehaviour
 
 				for (int i = 0; i < EdgeCount; ++i)
 				{
-					Vector3 vecPosA = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc;
+					Vector3 vecPosA = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc + halfDepthVec;
 					vecPosA = particle.Rot * vecPosA;
 					vecPosA += particle.Pos;
-					Vector3 vecPosB = polygon.Edges[i].Point2.Loc + depthVec - polygon.Centroid.Loc;
+					Vector3 vecPosB = polygon.Edges[i].Point2.Loc - polygon.Centroid.Loc - halfDepthVec;
 					vecPosB = particle.Rot * vecPosB;
 					vecPosB += particle.Pos;
 					vertices[vertexIndex++] = vecPosA;
@@ -360,19 +367,21 @@ public class DestructionController : MonoBehaviour
     {
 		Particles = new List<Particle>();
 
+		int index = 0;
 		foreach (var polygon in polygons)
 		{
-			if (polygon != null)
+			if (polygon != null && polygon.Surface < ParticleThreshold)
 			{
 				Quaternion WallRotation = WallObject.transform.rotation;
 				Vector3 localPosition = polygon.Centroid.Loc;
 				Vector3 worldPosition = WallRotation * localPosition;
 				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
 				//float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored);
+				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored, 5.0f);
 				Particles.Add(p);
 
 				p.ApplyForce(impactPoint, -impulse);
+				polygon.ParticleIndex = index++;
 			}
         }
     }
@@ -384,7 +393,7 @@ public class DestructionController : MonoBehaviour
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 			//float linearDamping = 0.1f;
 			float linearDamping = 0.99f;
-			float angularDamping = 0.5f;
+			float angularDamping = 0.75f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
@@ -397,11 +406,16 @@ public class DestructionController : MonoBehaviour
 					continue;
 				}
 
+				if (p.Lifetime < 0.0f)
+				{
+					p.Pos = new Vector3(-10000.0f, -1000.0f, -10000.0f);
+				}
+
 				{
 					p.Vel += (Particles[i].Acc + gravity) * delta;
 					//p.Vel *= Mathf.Pow(1.0f - linearDamping, delta);
 					p.Pos += Particles[i].Vel * delta;
-					//p.Acc = new Vector3(0,0,0);
+					p.Acc = new Vector3(0,0,0);
 				}
 
 				if (p.Pos.y < -3.0f)
