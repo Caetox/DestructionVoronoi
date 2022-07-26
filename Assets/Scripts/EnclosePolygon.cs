@@ -76,7 +76,7 @@ public class EnclosePolygon //: MonoBehaviour
                 float m = (e.Point2.Loc.x - e.Point1.Loc.x) / (e.Point2.Loc.z - e.Point1.Loc.z);
                 float x = e.Point1.Loc.x + ((minZ - e.Point1.Loc.z) * m);
                 if (x < maxX && x > minX){
-                    Point intersection = new Point(x, maxZ);
+                    Point intersection = new Point(x, minZ);
                     enclosedPoints.Add(intersection);
                     countIntersections++;
                 }
