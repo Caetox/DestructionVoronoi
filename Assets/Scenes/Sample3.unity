@@ -416,6 +416,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Destructible
       objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateParticles
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateGameObjects
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
 --- !u!1001 &538777258
@@ -644,6 +652,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Destructible (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateParticles
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateGameObjects
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
 --- !u!1 &1367951123
@@ -797,6 +813,14 @@ PrefabInstance:
     - target: {fileID: 2513135445336448620, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: m_Name
       value: Destructible (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateParticles
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: instantiateGameObjects
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
