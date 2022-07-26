@@ -15,8 +15,10 @@ public class Particle
 	public Vector3 Acc;
 	public float Mass;
 	public float InvMass;
+	public bool IsStatic;
+	public float Lifetime;
 
-	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset)
+	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset, bool isStatic)
 	{
         Pos = pos;
         Rot = rot;
@@ -28,6 +30,7 @@ public class Particle
 		AngularMomentum = new Vector3();
 		Mass = mass;
 		InvMass = 1.0f / Mass;
+		IsStatic = isStatic;
 	}
 
 	public void ApplyForce(Vector3 Location, Vector3 Force)
@@ -47,7 +50,7 @@ public class DestructionController : MonoBehaviour
 {
     public int number_of_seeds = 50;
 	public int number_of_gameObjects = 10;
-	public int clustering_Factor = 5; // higher value -> seeds are closer to contact point
+	//public int clustering_Factor = 5; // higher value -> seeds are closer to contact point
 
     public GameObject FragmentPrefab;
 
@@ -68,6 +71,8 @@ public class DestructionController : MonoBehaviour
 
 	public Material WallMaterial;
 	public Material SideMaterial;
+
+	public Vector2 Stretching = new Vector2(1,1);
 
 	public bool debugging;
 
@@ -104,8 +109,8 @@ public class DestructionController : MonoBehaviour
         // generate seeds
         var impulse = Mathf.Abs((collision.impulse.x + collision.impulse.y + collision.impulse.z) / Time.fixedDeltaTime);
         WallMass = (int)collision.rigidbody.mass;
-        number_of_seeds = (int)impulse/100;
-        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, WallMass);
+        number_of_seeds = (int)impulse/10;
+        var seeds = delaunay.GenerateClusteredPoints(contactPoint, number_of_seeds, objectSize, WallMass, Stretching);
 		Debug.Log("Impulse: " + impulse + "    mass: " + WallMass + "     number of seeds: " + number_of_seeds);
 
         // run delaunay triangulation
@@ -113,16 +118,19 @@ public class DestructionController : MonoBehaviour
 
 		// construct voronoi diagram
 		Profiler.BeginSample("Voronoi");
-		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds);
+		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds, objectSize);
 		Profiler.EndSample();
 		// cut off polygons at the boundaries
 		Debug.Log("object dimensions: " +(float)-0.5 * objectSize.x + " " + (float)0.5 * objectSize.x + " " + (float)-0.5 * objectSize.z + " " + (float)0.5 * objectSize.z);
+
+		//GenerateFragments(Polygons, objectSize);
+
 		for (int i = 0; i < Polygons.Length; i++)
 		{
 			if (Polygons[i] != null && Polygons[i].IsValid)
 			{
-				//Polygons[i] = enclose.enclosePoly(Polygons[i], -1000.0f, 1000.0f, -1000.0f, 1000.0f);
-				Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+				//Polygons[i].Sort(objectSize);
 			}
 		}
 		// Generates particles using game objects
@@ -134,7 +142,7 @@ public class DestructionController : MonoBehaviour
 		{
 			Profiler.BeginSample("Meshes");
 			// Generates own particle structure
-			GenerateFragmentParticles(Polygons, collision.contacts[0].otherCollider.transform.position, collision.impulse);
+			GenerateFragmentParticles(Polygons, collisionPosition, collision.impulse);
 			GenerateMesh(objectSize);
 			Profiler.EndSample();
 		}
@@ -144,25 +152,16 @@ public class DestructionController : MonoBehaviour
 		if (debugging)
 		{
 			//visualization of delaunay triangulation
-			var shiftedTriangulation = new HashSet<Triangle>();
+			var edges = new List<Edge>();
 			foreach (var triangle in triangulation)
 			{
-				var p1 = new Point(triangle.Vertices[0].Loc.x, triangle.Vertices[0].Loc.z);
-				var p2 = new Point(triangle.Vertices[1].Loc.x, triangle.Vertices[1].Loc.z);
-				var p3 = new Point(triangle.Vertices[2].Loc.x, triangle.Vertices[2].Loc.z);
-				var shiftedTriangle = new Triangle(p1, p2, p3);
-				shiftedTriangulation.Add(shiftedTriangle);
+				edges.Add(new Edge(triangle.Vertices[0], triangle.Vertices[1]));
+				edges.Add(new Edge(triangle.Vertices[1], triangle.Vertices[2]));
+				edges.Add(new Edge(triangle.Vertices[2], triangle.Vertices[0]));
 			}
-			var shiftedEdges = new List<Edge>();
-			foreach (var shiftedTriangle in triangulation)
+			foreach (var shiftedEdge in edges)
 			{
-				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[0], shiftedTriangle.Vertices[1]));
-				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[1], shiftedTriangle.Vertices[2]));
-				shiftedEdges.Add(new Edge(shiftedTriangle.Vertices[2], shiftedTriangle.Vertices[0]));
-			}
-			foreach (var shiftedEdge in shiftedEdges)
-			{
-				Debug.DrawLine(new Vector3((float)shiftedEdge.Point1.Loc.x, 0.1f, (float)shiftedEdge.Point1.Loc.z), new Vector3((float)shiftedEdge.Point2.Loc.x, 0.1f, (float)shiftedEdge.Point2.Loc.z), Color.grey, 100f);
+				Debug.DrawLine(new Vector3((float)shiftedEdge.Point1.Loc.x - 15.0f, 0.1f, (float)shiftedEdge.Point1.Loc.z), new Vector3((float)shiftedEdge.Point2.Loc.x - 15.0f, 0.1f, (float)shiftedEdge.Point2.Loc.z), Color.white, 100f);
 			}
 		}
     }
@@ -174,7 +173,9 @@ public class DestructionController : MonoBehaviour
 		{
             if (polygon != null && polygon.IsValid)
             {
-
+				//Debug.Log("P" + polygon.Edges.Count);
+				//Debug.Log(polygon.Centroid.Index);
+				//Debug.Log(polygon.Centroid.Corner);
 				Quaternion WallRotation = WallObject.transform.rotation;
 				Vector3 localPosition = polygon.Centroid.Loc;
 				Vector3 worldPosition = WallRotation * localPosition;
@@ -185,13 +186,14 @@ public class DestructionController : MonoBehaviour
                     Child.transform.position = worldPosition;
                     Child.transform.rotation = WallObject.transform.rotation;
                     Fragment Frag = Child.GetComponent<Fragment>();
-                    Frag.Generate(polygon, objectSize.y, WallMaterial, SideMaterial);
+                    Frag.Generate(polygon, objectSize.y, WallMaterial, SideMaterial, objectSize);
 
 				if (!polygon.anchored)
 				{
 					Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
 					Child.GetComponent<Rigidbody>().mass = polygon.Surface * objectSize.y;
 					Child.GetComponent<Rigidbody>().AddForce(RandomForce * 100.0f);
+					//Destroy(Child.GetComponent<Rigidbody>());
 				}
 				else 
 				{
@@ -366,8 +368,8 @@ public class DestructionController : MonoBehaviour
 				Vector3 localPosition = polygon.Centroid.Loc;
 				Vector3 worldPosition = WallRotation * localPosition;
 				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
-				float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0);
+				//float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
+				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored);
 				Particles.Add(p);
 
 				p.ApplyForce(impactPoint, -impulse);
@@ -380,25 +382,41 @@ public class DestructionController : MonoBehaviour
 		if (Particles != null)
 		{
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
-			float linearDamping = 0.01f;
-			float angularDamping = 0.0001f;
+			//float linearDamping = 0.1f;
+			float linearDamping = 0.99f;
+			float angularDamping = 0.5f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
 			{
 				Particle p = Particles[i];
+				p.Lifetime -= delta;
 
-				p.Vel += (Particles[i].Acc + gravity) * delta;
-				p.Vel *= Mathf.Pow(1.0f - linearDamping, delta);
-				p.Pos += Particles[i].Vel * delta;
-				
+				if (p.IsStatic)
+				{
+					continue;
+				}
 
-				//p.Acc *= linearDamping;
+				{
+					p.Vel += (Particles[i].Acc + gravity) * delta;
+					//p.Vel *= Mathf.Pow(1.0f - linearDamping, delta);
+					p.Pos += Particles[i].Vel * delta;
+					//p.Acc = new Vector3(0,0,0);
+				}
+
+				if (p.Pos.y < -3.0f)
+				{
+					p.Pos = new Vector3(p.Pos.x, -2.9f, p.Pos.z);
+					//p.ApplyForce(p.Pos + new Vector3(Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f)), new Vector3(Random.Range(-2.0f, 2.0f), 7.0f, Random.Range(-2.0f, 2.0f)));
+					Vector3 vel = Vector3.Reflect(p.Vel, new Vector3(0, 1.0f, 0)) * p.Mass * 10.0f;
+					//p.ApplyForce(p.Pos, vel);
+				}
+
 
 				Quaternion q = new Quaternion(p.AngularVel.x * delta, p.AngularVel.y * delta, p.AngularVel.z * delta, 0.0f);
 				Quaternion spin = q * p.Rot;
 				Quaternion spin2 = new Quaternion(spin.x * 0.5f, spin.y * 0.5f, spin.z * 0.5f, spin.w * 0.5f);
-				p.Rot = new Quaternion(p.Rot.x + spin.x, p.Rot.y + spin.y, p.Rot.z + spin.z, p.Rot.w + spin.w);
+				p.Rot = new Quaternion(p.Rot.x + spin2.x, p.Rot.y + spin2.y, p.Rot.z + spin2.z, p.Rot.w + spin2.w);
 				p.Rot.Normalize();
 
 				p.AngularVel += p.AngularMomentum;

@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class Voronoi
 {
-    public Polygon[] GenerateEdgesFromDelaunay(IEnumerable<Point> points, IEnumerable<Triangle> triangulation, int numSeeds)
+    public Polygon[] GenerateEdgesFromDelaunay(IEnumerable<Point> points, IEnumerable<Triangle> triangulation, int numSeeds, Vector3 Scale)
     {
-        Polygon[] polys = new Polygon[numSeeds];
+        Polygon[] polys = new Polygon[numSeeds + 100];
 
         int c = 0;
         foreach (var point in points)
@@ -32,20 +32,45 @@ public class Voronoi
                         if (edge == null)
                         {
                             if (cornerA || cornerB || cornerC)
-                            {
+							{
+                                polys[c++] = new Polygon(new Point(0, 0));
+                                polys[c - 1].anchored = true;
+
                                 if (cornerA)
-                                    edge = new Edge(triangle.Circumcenter, neighbor.Vertices[0]);
-								if (cornerB)
-									edge = new Edge(triangle.Circumcenter, neighbor.Vertices[1]);
-								if (cornerC)
-									edge = new Edge(triangle.Circumcenter, neighbor.Vertices[2]);
+                                {
+                                    polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[0], neighbor.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[0], triangle.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(triangle.Circumcenter, neighbor.Circumcenter));
+								}
+                                if (cornerB)
+                                {
+									polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[1], neighbor.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[1], triangle.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(triangle.Circumcenter, neighbor.Circumcenter));
+								}
+                                if (cornerC)
+                                {
+									polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[2], neighbor.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(neighbor.Vertices[2], triangle.Circumcenter));
+									polys[c - 1].Edges.Add(new Edge(triangle.Circumcenter, neighbor.Circumcenter));
+								}
 							}
-                            else
-                            {
+							//if (cornerA || cornerB || cornerC)
+							//{
+							//	if (cornerA)
+							//		edge = new Edge(triangle.Circumcenter, neighbor.Vertices[0]);
+							//	if (cornerB)
+							//		edge = new Edge(triangle.Circumcenter, neighbor.Vertices[1]);
+							//	if (cornerC)
+							//		edge = new Edge(triangle.Circumcenter, neighbor.Vertices[2]);
+							//}
+							//else
+							{
                                 edge = new Edge(triangle.Circumcenter, neighbor.Circumcenter);
                             }
                         }
                         // Add edges to the related polygons
+                        if (triangle.Vertices[i].Index > 0 && triangle.Vertices[i].Index < c)
                         polys[triangle.Vertices[i].Index].Edges.Add(edge);
                     }
                 }
@@ -54,7 +79,7 @@ public class Voronoi
 
         for (int i = 0; i < c; ++i)
 		{
-            polys[i].Sort();
+            polys[i].Sort(Scale);
 		}
 
 		return polys;

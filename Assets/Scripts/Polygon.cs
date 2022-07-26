@@ -20,8 +20,9 @@ public class Polygon
 	public float Surface;
 	public bool anchored;
 
-	public void Sort()
+	public void Sort(Vector3 Scale)
 	{
+		Vector2 uvScale = new Vector2(1.0f / Scale.x, 1.0f / Scale.z);
 		List<Edge> SortedEdges = new List<Edge>();
 
 		if (Edges.Count < 3)
@@ -29,6 +30,42 @@ public class Polygon
 			return;
 		}
 
+		// Clamp to edge
+		Scale = Scale * 0.5f;
+		for (int i = 1; i < Edges.Count; ++i)
+		{
+			{
+				float x = Edges[i].Point1.Loc.x;
+				float y = Edges[i].Point1.Loc.y;
+				float z = Edges[i].Point1.Loc.z;
+				Edges[i].Point1.Loc = new Vector3(Mathf.Clamp(x, -Scale.x, Scale.x), Mathf.Clamp(y, -Scale.y, Scale.y), Mathf.Clamp(z, -Scale.z, Scale.z));
+				Edges[i].Point1.Uv = new Vector2(Mathf.Clamp(Edges[i].Point1.Uv.x, -Scale.x, Scale.x), Mathf.Clamp(Edges[i].Point1.Uv.y, -Scale.z, Scale.z));
+			}
+			{
+				float x = Edges[i].Point2.Loc.x;
+				float y = Edges[i].Point2.Loc.y;
+				float z = Edges[i].Point2.Loc.z;
+				Edges[i].Point2.Loc = new Vector3(Mathf.Clamp(x, -Scale.x, Scale.x), Mathf.Clamp(y, -Scale.y, Scale.y), Mathf.Clamp(z, -Scale.z, Scale.z));
+				Edges[i].Point2.Uv = new Vector2(Mathf.Clamp(Edges[i].Point2.Uv.x, -Scale.x, Scale.x), Mathf.Clamp(Edges[i].Point2.Uv.y, -Scale.z, Scale.z));
+			}
+		}
+
+		for (int i = 1; i < Edges.Count; ++i)
+		{
+			Vector3 a = Edges[0].Point1.Loc - Edges[0].Point2.Loc;
+			Vector3 b = Edges[0].Point1.Loc - Edges[1].Point2.Loc;
+
+			float d = Vector3.Dot(a, b);
+			if (d < 0.001f)
+			{
+				Edges[0].Point2 = Edges[1].Point2;
+				Edges[1] = Edges[0];
+			}
+
+
+		}
+
+		// Find errors in winding order
 		SortedEdges.Add(Edges[0]);
 
 		for (int i = 0; i < Edges.Count; ++i)
@@ -61,7 +98,7 @@ public class Polygon
 			}
 		}
 
-		// Check for winding order
+		// Check if enough vertices are left
 		if (SortedEdges.Count < 3)
 		{
 			return;
