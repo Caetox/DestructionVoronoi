@@ -125,7 +125,7 @@ public class DestructionController : MonoBehaviour
 		Polygons = voronoi.GenerateEdgesFromDelaunay(seeds, triangulation, number_of_seeds, objectSize);
 		Profiler.EndSample();
 		// cut off polygons at the boundaries
-		Debug.Log("object dimensions: " +(float)-0.5 * objectSize.x + " " + (float)0.5 * objectSize.x + " " + (float)-0.5 * objectSize.z + " " + (float)0.5 * objectSize.z);
+		// Debug.Log("object dimensions: " +(float)-0.5 * objectSize.x + " " + (float)0.5 * objectSize.x + " " + (float)-0.5 * objectSize.z + " " + (float)0.5 * objectSize.z);
 
 		//GenerateFragments(Polygons, objectSize);
 
