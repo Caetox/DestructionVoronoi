@@ -37,7 +37,7 @@ public class Fragment : MonoBehaviour
 		Vector3[] vertices = new Vector3[EdgeCount * 4];
 		Vector3[] normals = new Vector3[EdgeCount * 4];
 		Vector2[] uv = new Vector2[EdgeCount * 4];
-		int[] triangles = new int[(EdgeCount * 2 + (2 * (EdgeCount - 2))) * 3];
+		int[] triangles = new int[(EdgeCount * 2 + (2 * (EdgeCount))) * 3];
 
 		int vertexIndex = 0;
 		int normalIndex = 0;
@@ -81,6 +81,10 @@ public class Fragment : MonoBehaviour
 		// Sides
 		for (int i = 0; i < EdgeCount; ++i)
 		{
+			if (EdgeCount == 3)
+			{
+				Debug.Log("T");
+			}
 			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc + halfDepthVec;
 			vertices[vertexIndex++] = Data.Edges[i].Point2.Loc - Data.Centroid.Loc - halfDepthVec;
 			normals[normalIndex++] = Vector3.forward;
@@ -92,35 +96,36 @@ public class Fragment : MonoBehaviour
 		}
 
 		int IndexOffset = EdgeCount * 2;
-		for (int i = 0; i < EdgeCount - 2; ++i)
+		for (int i = 0; i < EdgeCount /*- 2*/; ++i)
 		{
-			triangles[triangleIndex++] = IndexOffset + 2 + (i * 2);
-			triangles[triangleIndex++] = IndexOffset + 1 + (i * 2);
-			triangles[triangleIndex++] = IndexOffset + 0 + (i * 2);
-			triangles[triangleIndex++] = IndexOffset + 2 + (i * 2);
-			triangles[triangleIndex++] = IndexOffset + 3 + (i * 2);
-			triangles[triangleIndex++] = IndexOffset + 1 + (i * 2);
+			triangles[triangleIndex++] = IndexOffset + 2 + (i);// * 2);
+			triangles[triangleIndex++] = IndexOffset + 1 + (i);// * 2);
+			triangles[triangleIndex++] = IndexOffset + 0 + (i);// * 2);
+			triangles[triangleIndex++] = IndexOffset + 2 + (i);// * 2);
+			triangles[triangleIndex++] = IndexOffset + 3 + (i);// * 2);
+			triangles[triangleIndex++] = IndexOffset + 1 + (i);// * 2);
 
-			Vector3 normal = Polygon.CalcNormal(vertices[IndexOffset + 2 + (i * 2)], vertices[IndexOffset + 1 + (i * 2)], vertices[IndexOffset + 0 + (i * 2)]);
+			Vector3 normal = Polygon.CalcNormal(vertices[IndexOffset + 2 + (i/* * 2*/)], vertices[IndexOffset + 1 + (i /** 2*/)], vertices[IndexOffset + 0 + (i /** 2*/)]);
 
-			normals[IndexOffset + 2 + (i * 2)] = normal;
-			normals[IndexOffset + 1 + (i * 2)] = normal;
-			normals[IndexOffset + 0 + (i * 2)] = normal;
-			normals[IndexOffset + 2 + (i * 2)] = normal;
-			normals[IndexOffset + 3 + (i * 2)] = normal;
-			normals[IndexOffset + 1 + (i * 2)] = normal;
+			normals[IndexOffset + 2 + (i /** 2*/)] = normal;
+			normals[IndexOffset + 1 + (i /** 2*/)] = normal;
+			normals[IndexOffset + 0 + (i /** 2*/)] = normal;
+			normals[IndexOffset + 2 + (i /** 2*/)] = normal;
+			normals[IndexOffset + 3 + (i /** 2*/)] = normal;
+			normals[IndexOffset + 1 + (i /** 2*/)] = normal;
 		}
 
 
 		// Debug
-		Vector3 testoffset = new Vector3(0, Random.Range(-0.22f, 0.22f), 0);
-		Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-		for (int i = 1; i < EdgeCount; ++i)
+		if (!Data.anchored)
 		{
-			Debug.DrawLine(vertices[i] + testoffset + Data.Centroid.Loc, vertices[i - 1] + testoffset + Data.Centroid.Loc, randomColor, 100f);
+			Vector3 testoffset = new Vector3(0, Random.Range(-0.22f, 0.22f), 0);
+			Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+			for (int i = 1; i < EdgeCount; ++i)
+			{
+				Debug.DrawLine(vertices[i] + testoffset + Data.Centroid.Loc, vertices[i - 1] + testoffset + Data.Centroid.Loc, randomColor, 100f);
+			}
 		}
-
-		
 
 
 		// Apply
