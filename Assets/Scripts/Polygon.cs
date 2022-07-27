@@ -21,7 +21,7 @@ public class Polygon
 	public float Surface;
 	public bool anchored;
 	public int ParticleIndex;
-
+	public Vector3 Sidelength;
 	public void Sort(Vector3 Scale)
 	{
 		Vector2 uvScale = new Vector2(1.0f / Scale.x, 1.0f / Scale.z);
@@ -119,6 +119,8 @@ public class Polygon
 
 		Edges = SortedEdges;
 
+		Vector3 Min = new Vector3();
+		Vector3 Max = new Vector3();
 		Circumference = 0;
 		Surface = 0;
 		for (int i = 1; i < Edges.Count; ++i)
@@ -127,8 +129,17 @@ public class Polygon
 			Vector3 b = Edges[i].Point2.Loc;
 			//Circumference += Vector3.Distance(a, b);
 			Surface += Mathf.Abs(a.x * b.z - b.x * a.z);
+			if (a.x < Min.x)
+				Min.x = a.x;
+			if (a.z < Min.z)
+				Min.z = a.z;
+			if (a.x > Max.x)
+				Max.x = a.x;
+			if (a.z > Max.z)
+				Max.z = a.z;
 		}
 		Surface *= 0.5f;
+		Sidelength = Max - Min;
 	}
 
 	static public Vector3 CalcNormal(Vector3 edgeA, Vector3 edgeB, Vector3 edgeC)
