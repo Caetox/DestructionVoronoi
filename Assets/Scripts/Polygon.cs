@@ -52,20 +52,18 @@ public class Polygon
 			}
 		}
 
-		for (int i = 1; i < Edges.Count; ++i)
-		{
-			Vector3 a = Edges[0].Point1.Loc - Edges[0].Point2.Loc;
-			Vector3 b = Edges[0].Point1.Loc - Edges[1].Point2.Loc;
+		//for (int i = 1; i < Edges.Count; ++i)
+		//{
+		//	Vector3 a = Edges[0].Point1.Loc - Edges[0].Point2.Loc;
+		//	Vector3 b = Edges[0].Point1.Loc - Edges[1].Point2.Loc;
 
-			float d = Vector3.Dot(a, b);
-			if (d < 0.001f)
-			{
-				Edges[0].Point2 = Edges[1].Point2;
-				Edges[1] = Edges[0];
-			}
-
-
-		}
+		//	float d = Vector3.Dot(a, b);
+		//	if (d < 0.001f)
+		//	{
+		//		Edges[0].Point2 = Edges[1].Point2;
+		//		Edges[1] = Edges[0];
+		//	}
+		//}
 
 		// Find errors in winding order
 		SortedEdges.Add(Edges[0]);
