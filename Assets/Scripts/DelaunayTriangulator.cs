@@ -25,6 +25,7 @@ public class DelaunayTriangulator
 		MinY = -0.5f * objectSize.z;
 		MaxX =  0.5f * objectSize.x;
         MaxY =  0.5f * objectSize.z;
+        UnityEngine.Random.InitState(2);
 
         var points = new List<Point>() {};
 
