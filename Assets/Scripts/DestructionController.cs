@@ -17,8 +17,11 @@ public class Particle
 	public float InvMass;
 	public bool IsStatic;
 	public float Lifetime;
+	public Vector3 Ix;
+	public Vector3 Iy;
+	public Vector3 Iz;
 
-	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset, bool isStatic, float lifetime)
+	public Particle(Vector3 pos, Quaternion rot, float mass, int numVertices, int offset, bool isStatic, float lifetime, Vector3 sidelength)
 	{
         Pos = pos;
         Rot = rot;
@@ -32,6 +35,7 @@ public class Particle
 		InvMass = 1.0f / Mass;
 		IsStatic = isStatic;
 		Lifetime = lifetime;
+		CalculateInertiaTensor(sidelength);
 	}
 
 	public void ApplyForce(Vector3 Location, Vector3 Force)
@@ -43,6 +47,16 @@ public class Particle
 		Vector3 Torque = Vector3.Cross(Arm, Force);
 
 		AngularMomentum += Torque * InvMass;
+	}
+
+	public void CalculateInertiaTensor(Vector3 Sidelength)
+	{
+		float m = Mass / 12.0f;
+		Vector3 bounds = Sidelength * 0.5f;
+		Vector3 bounds2 = new Vector3(bounds.x * bounds.x, bounds.y * bounds.y, bounds.z * bounds.z);
+		Ix = m * new Vector3(bounds2.y + bounds2.z, 0.0f, 0.0f);
+		Iy = m * new Vector3(0.0f, bounds2.x + bounds2.z, 0.0f);
+		Iz = m * new Vector3(0.0f, 0.0f, bounds2.x + bounds2.y);
 	}
 }
 
@@ -77,6 +91,8 @@ public class DestructionController : MonoBehaviour
 	public Vector2 Stretching = new Vector2(1,1);
 
 	public float ParticleThreshold = 1.0f;
+
+	public bool IsAgainstWall = false;
 
 	public bool debugging;
 
@@ -133,7 +149,7 @@ public class DestructionController : MonoBehaviour
 		{
 			if (Polygons[i] != null && Polygons[i].IsValid)
 			{
-				Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
 				//Polygons[i].Sort(objectSize);
 			}
 		}
@@ -318,27 +334,30 @@ public class DestructionController : MonoBehaviour
 					float u = (float)i / (float)EdgeCount;
 					uv[uvIndex++] = new Vector2(u, 1.0f);
 					uv[uvIndex++] = new Vector2(u, 0.0f);
+
+					// Collision
+					GroundCollision(vecPosA, particle);
+					GroundCollision(vecPosB, particle);
 				}
 
 				int IndexOffset = EdgeCount * 2;
-				for (int i = 0; i < EdgeCount - 2; ++i)
+				for (int i = 0; i < EdgeCount /*- 2*/; ++i)
 				{
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 2 + (i * 2);
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 1 + (i * 2);
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 0 + (i * 2);
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 2 + (i * 2);
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 3 + (i * 2);
-					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 1 + (i * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 2 + (i);// * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 1 + (i);// * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 0 + (i);// * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 2 + (i);// * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 3 + (i);// * 2);
+					triangles[triangleIndex++] = OverallIndexOffset + IndexOffset + 1 + (i);// * 2);
 
-					Vector3 normal = particle.Rot * Polygon.CalcNormal(vertices[IndexOffset + 2 + (i * 2)], vertices[IndexOffset + 1 + (i * 2)], vertices[IndexOffset + 0 + (i * 2)]);
-					normal.Normalize();
+					Vector3 normal = Polygon.CalcNormal(vertices[IndexOffset + 2 + (i/* * 2*/)], vertices[IndexOffset + 1 + (i /** 2*/)], vertices[IndexOffset + 0 + (i /** 2*/)]);
 
-					normals[IndexOffset + 2 + (i * 2)] = normal;
-					normals[IndexOffset + 1 + (i * 2)] = normal;
-					normals[IndexOffset + 0 + (i * 2)] = normal;
-					normals[IndexOffset + 2 + (i * 2)] = normal;
-					normals[IndexOffset + 3 + (i * 2)] = normal;
-					normals[IndexOffset + 1 + (i * 2)] = normal;
+					normals[IndexOffset + 2 + (i /** 2*/)] = normal;
+					normals[IndexOffset + 1 + (i /** 2*/)] = normal;
+					normals[IndexOffset + 0 + (i /** 2*/)] = normal;
+					normals[IndexOffset + 2 + (i /** 2*/)] = normal;
+					normals[IndexOffset + 3 + (i /** 2*/)] = normal;
+					normals[IndexOffset + 1 + (i /** 2*/)] = normal;
 				}
 
 				// Debug
@@ -376,11 +395,19 @@ public class DestructionController : MonoBehaviour
 				Vector3 localPosition = polygon.Centroid.Loc;
 				Vector3 worldPosition = WallRotation * localPosition;
 				Vector3 dir = (polygon.Centroid.Loc - impactPoint);
+				Vector3 sidelength = new Vector3(polygon.Sidelength.x, objectSize.y, polygon.Sidelength.z);
 				//float distance = 1.0f / dir.magnitude * dir.magnitude * dir.magnitude;
-				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored, 5.0f);
+				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored, 35.0f, sidelength);
 				Particles.Add(p);
 
-				p.ApplyForce(impactPoint, -impulse);
+				if (IsAgainstWall)
+				{
+					p.ApplyForce(impactPoint, impulse);
+				}
+				else
+				{
+					p.ApplyForce(impactPoint, -impulse);
+				}
 				polygon.ParticleIndex = index++;
 			}
         }
@@ -393,7 +420,7 @@ public class DestructionController : MonoBehaviour
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 			//float linearDamping = 0.1f;
 			float linearDamping = 0.99f;
-			float angularDamping = 0.75f;
+			float angularDamping = 0.99f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
@@ -416,15 +443,16 @@ public class DestructionController : MonoBehaviour
 					//p.Vel *= Mathf.Pow(1.0f - linearDamping, delta);
 					p.Pos += Particles[i].Vel * delta;
 					p.Acc = new Vector3(0,0,0);
+					p.Vel *= linearDamping;
 				}
 
-				if (p.Pos.y < -3.0f)
-				{
-					p.Pos = new Vector3(p.Pos.x, -2.9f, p.Pos.z);
-					//p.ApplyForce(p.Pos + new Vector3(Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f)), new Vector3(Random.Range(-2.0f, 2.0f), 7.0f, Random.Range(-2.0f, 2.0f)));
-					Vector3 vel = Vector3.Reflect(p.Vel, new Vector3(0, 1.0f, 0)) * p.Mass * 10.0f;
-					//p.ApplyForce(p.Pos, vel);
-				}
+				//if (p.Pos.y < -3.0f)
+				//{
+				//	p.Pos = new Vector3(p.Pos.x, -2.9f, p.Pos.z);
+				//	//p.ApplyForce(p.Pos + new Vector3(Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f), Random.Range(-10.0f, 10.0f)), new Vector3(Random.Range(-2.0f, 2.0f), 7.0f, Random.Range(-2.0f, 2.0f)));
+				//	Vector3 vel = Vector3.Reflect(p.Vel, new Vector3(0, 1.0f, 0)) * p.Mass * 10.0f;
+				//	//p.ApplyForce(p.Pos, vel);
+				//}
 
 
 				Quaternion q = new Quaternion(p.AngularVel.x * delta, p.AngularVel.y * delta, p.AngularVel.z * delta, 0.0f);
@@ -433,7 +461,7 @@ public class DestructionController : MonoBehaviour
 				p.Rot = new Quaternion(p.Rot.x + spin2.x, p.Rot.y + spin2.y, p.Rot.z + spin2.z, p.Rot.w + spin2.w);
 				p.Rot.Normalize();
 
-				p.AngularVel += p.AngularMomentum;
+				p.AngularVel += p.AngularMomentum * delta;
 				p.AngularVel *= angularDamping;
 				p.AngularMomentum = new Vector3();
 			}
@@ -444,5 +472,23 @@ public class DestructionController : MonoBehaviour
 	private void Update()
 	{
 		UpdateParticles();
+	}
+
+	public void GroundCollision(Vector3 vertex, Particle particle)
+	{
+		Vector3 Floor = new Vector3(0, -4.2f, 0);
+		Vector3 FloorNormal = new Vector3(0, 1.0f, 0);
+		float SoftMargin = 0.01f;
+		if (vertex.y < Floor.y)
+		{
+			// Resolve collision
+			float depth = (Floor.y - vertex.y);
+			particle.Vel += (FloorNormal * depth) + (FloorNormal * SoftMargin) *0.9f;
+
+			// Apply force
+			//particle.ApplyForce(vertex, -particle.Vel * particle.Mass);
+			Vector3 dir = vertex;
+			particle.ApplyForce(vertex, FloorNormal * particle.Mass * 0.8f);
+		}
 	}
 }
