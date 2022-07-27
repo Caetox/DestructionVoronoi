@@ -97,6 +97,7 @@ public class DestructionController : MonoBehaviour
 
 	public Material WallMaterial;
 	public Material SideMaterial;
+	public Material DebugMaterial;
 
 	public Vector2 Stretching = new Vector2(1,1);
 
@@ -106,7 +107,10 @@ public class DestructionController : MonoBehaviour
 
 	public float GroundPlane = -4.18f;
 
+	public float F = 1.0f;
+
 	public bool debugging;
+	public bool firstFrameDebugging = false;
 
 	void Start() {
 		objectSize = WallObject.transform.localScale;
@@ -119,6 +123,12 @@ public class DestructionController : MonoBehaviour
 				GameObject obj = Instantiate<GameObject>(FragmentPrefab, transform.position, transform.rotation);
 				ObjectPool.Add(obj);
 			}
+		}
+
+		if (debugging)
+		{
+			WallMaterial = DebugMaterial;
+			SideMaterial = DebugMaterial;
 		}
     }
 
@@ -272,9 +282,21 @@ public class DestructionController : MonoBehaviour
 
         // Create buffers
 		Vector3[] vertices = new Vector3[OverallEdgeCount * 4];
+		Color[] colors = new Color[OverallEdgeCount * 4];
 		Vector3[] normals = new Vector3[OverallEdgeCount * 4];
 		Vector2[] uv = new Vector2[OverallEdgeCount * 4];
 		int[] triangles = new int[(OverallEdgeCount * 2 + (2 * (OverallEdgeCount - 2))) * 3];
+
+		if (debugging)
+		{
+			for (int i = 0; i < OverallEdgeCount * 4; ++i)
+				colors[i] = Color.red;
+		}
+		else
+		{
+			for (int i = 0; i < OverallEdgeCount * 4; ++i)
+				colors[i] = Color.white;
+		}
 
 		int vertexIndex = 0;
 		int normalIndex = 0;
@@ -291,6 +313,7 @@ public class DestructionController : MonoBehaviour
             if (polygon != null && polygon.IsValid && polygon.ParticleIndex != -1)
             {
 				bool doCollisionCheck = false;
+				float collisionDistance = 0.0f;
 				Particle particle = Particles[polygon.ParticleIndex];
 
 				int EdgeCount = polygon.Edges.Count;
@@ -352,17 +375,38 @@ public class DestructionController : MonoBehaviour
 					uv[uvIndex++] = new Vector2(u, 0.0f);
 
 					// Collision
-					if (!doCollisionCheck && HasGroundCollision(vecPosA, particle))
+					float collisionDepth = 0.0f;
+					if (HasGroundCollision(vecPosA, particle, ref collisionDepth))
 					{
-						doCollisionCheck = true;
-						CollisionResolveList.Add(particle);
-						CollisionResolvePointList.Add(vecPosA);
+						if (collisionDepth > collisionDistance)
+						{
+							if (doCollisionCheck)
+							{
+								CollisionResolvePointList[CollisionResolvePointList.Count - 1] = vecPosA;
+							}
+							else
+							{
+								doCollisionCheck = true;
+								CollisionResolveList.Add(particle);
+								CollisionResolvePointList.Add(vecPosA);
+							}
+						}
 					}
-					if (!doCollisionCheck && HasGroundCollision(vecPosB, particle))
+					if (HasGroundCollision(vecPosB, particle, ref collisionDepth))
 					{
-						doCollisionCheck = true;
-						CollisionResolveList.Add(particle);
-						CollisionResolvePointList.Add(vecPosB);
+						if (collisionDepth > collisionDistance)
+						{
+							if (doCollisionCheck)
+							{
+								CollisionResolvePointList[CollisionResolvePointList.Count - 1] = vecPosB;
+							}
+							else
+							{
+								doCollisionCheck = true;
+								CollisionResolveList.Add(particle);
+								CollisionResolvePointList.Add(vecPosB);
+							}
+						}
 					}
 				}
 
@@ -387,12 +431,19 @@ public class DestructionController : MonoBehaviour
 				}
 
 				// Debug
-				//Vector3 testoffset = new Vector3(0, Random.Range(-0.01f, 0.01f), 0);
-				//Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
-				//for (int i = 1; i < EdgeCount; ++i)
-				//{
-				//	Debug.DrawLine(vertices[OverallIndexOffset + i] + testoffset, vertices[OverallIndexOffset + i - 1] + testoffset, randomColor, 100f);
-				//}
+				if (debugging && !firstFrameDebugging)
+				{
+					
+					Vector3 testoffset = new Vector3(0, Random.Range(-0.01f, 0.01f), 0);
+					Color randomColor = Random.ColorHSV(0f, 1f, 1f, 1f, 0.5f, 1f);
+					Quaternion WallRotation = WallObject.transform.rotation;
+					for (int i = 1; i < EdgeCount; ++i)
+					{
+						Vector3 a = WallRotation * vertices[OverallIndexOffset + i];
+						Vector3 b = WallRotation * vertices[OverallIndexOffset + i - 1];
+						Debug.DrawLine(a + testoffset, b + testoffset, randomColor, 100f);
+					}
+				}
 
 				OverallIndexOffset = vertexIndex;
 			}
@@ -406,6 +457,12 @@ public class DestructionController : MonoBehaviour
 		mesh.triangles = triangles;
 		meshFilter.mesh = mesh;
 		meshRenderer.material = WallMaterial;
+		if (debugging)
+		{
+			mesh.colors = colors;
+		}
+
+		firstFrameDebugging = true;
 
 		for (int i = 0; i < CollisionResolveList.Count; ++i)
 		{
@@ -429,8 +486,10 @@ public class DestructionController : MonoBehaviour
 				Vector3 sidelength = new Vector3(polygon.Sidelength.x, objectSize.y, polygon.Sidelength.z);
 				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored, 35.0f, sidelength);
 				Particles.Add(p);
-
-				Vector3 RandomForce = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f)) * p.Mass * 120.0f;// * 1550.0f;
+				Vector3 imp = impulse.normalized;
+				imp.Scale(new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f)));
+				imp += new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
+				Vector3 RandomForce = imp * p.Mass * F;
 				if (IsAgainstWall)
 				{
 					p.ApplyForce(impactPoint, impulse + RandomForce);
@@ -450,7 +509,7 @@ public class DestructionController : MonoBehaviour
 		{
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
 			float linearDamping = 0.995f;
-			float angularDamping = 0.98f;
+			float angularDamping = 0.965f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
@@ -506,11 +565,12 @@ public class DestructionController : MonoBehaviour
 		UpdateParticles();
 	}
 
-	public bool HasGroundCollision(Vector3 vertex, Particle particle)
+	public bool HasGroundCollision(Vector3 vertex, Particle particle, ref float collisionDepth)
 	{
 		Vector3 Floor = new Vector3(0, GroundPlane, 0);
 		Vector3 FloorNormal = new Vector3(0, 1.0f, 0);
 		float SoftMargin = 0.001f;
+		collisionDepth = Floor.y - vertex.y;
 		return (vertex.y < Floor.y);
 	}
 
@@ -518,24 +578,22 @@ public class DestructionController : MonoBehaviour
 	{
 		Vector3 Floor = new Vector3(0, GroundPlane, 0);
 		Vector3 FloorNormal = new Vector3(0, 1.0f, 0);
-		float SoftMargin = 0.001f;
+		float SoftMargin = 0.0018f;
 
 		// Resolve collision
 		float depth = (Floor.y - vertex.y);
 		if (depth > SoftMargin * 0.2f)
 			particle.Pos += (FloorNormal * depth);// + (FloorNormal * SoftMargin * 0.5f);
 
-		Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
-		//particle.Acc -= gravity;
 		particle.Acc = new Vector3(0,0,0);
-		particle.Vel *= 0.98f;
-		particle.AngularVel *= 0.98f;
+		particle.Vel *= 0.96f;
+		particle.AngularVel *= 0.975f;
 
 		// Apply force
 		if (depth > SoftMargin)
 		{
 			Vector3 dir = vertex;
-			particle.ApplyForce(vertex, FloorNormal * particle.Mass * 1.5f);
+			particle.ApplyForce(vertex, FloorNormal * particle.Mass * 1.0f);
 		}
 		
 	}

@@ -179,9 +179,17 @@ PrefabInstance:
       value: Destructible
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: F
+      value: 600
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: GroundPlane
       value: -3
       objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: WallMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: c0f7841f5225c6c47a2a7aabe043d8e2, type: 2}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles
       value: 1
@@ -660,9 +668,17 @@ PrefabInstance:
       value: Destructible (2)
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: F
+      value: 800
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: GroundPlane
       value: -3
       objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: WallMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: c0f7841f5225c6c47a2a7aabe043d8e2, type: 2}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles
       value: 1
@@ -823,9 +839,17 @@ PrefabInstance:
       value: Destructible (1)
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: F
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: GroundPlane
       value: -3
       objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: WallMaterial
+      value: 
+      objectReference: {fileID: 2100000, guid: c0f7841f5225c6c47a2a7aabe043d8e2, type: 2}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles
       value: 1
