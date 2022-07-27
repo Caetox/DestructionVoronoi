@@ -133,7 +133,7 @@ public class DestructionController : MonoBehaviour
 		{
 			if (Polygons[i] != null && Polygons[i].IsValid)
 			{
-				Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
+				//Polygons[i] = enclose.enclosePoly(Polygons[i], -0.5f * objectSize.x, 0.5f * objectSize.x, -0.5f * objectSize.z, 0.5f * objectSize.z);
 				//Polygons[i].Sort(objectSize);
 			}
 		}
