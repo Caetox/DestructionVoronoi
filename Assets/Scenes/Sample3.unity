@@ -417,6 +417,10 @@ PrefabInstance:
       value: Destructible
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: GroundPlane
+      value: -3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles
       value: 1
       objectReference: {fileID: 0}
@@ -653,6 +657,10 @@ PrefabInstance:
       value: Destructible (1)
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: GroundPlane
+      value: -3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles
       value: 1
       objectReference: {fileID: 0}
@@ -752,7 +760,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1367951123}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: -0.1, z: 0}
   m_LocalScale: {x: 100, y: 0.2, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -813,6 +821,10 @@ PrefabInstance:
     - target: {fileID: 2513135445336448620, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: m_Name
       value: Destructible (2)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
+      propertyPath: GroundPlane
+      value: -3
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateParticles

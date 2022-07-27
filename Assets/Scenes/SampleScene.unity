@@ -272,7 +272,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateGameObjects
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiate_game_objects
@@ -1024,7 +1024,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateGameObjects
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiate_game_objects
@@ -1246,11 +1246,11 @@ PrefabInstance:
       objectReference: {fileID: 2100000, guid: 78deda1c55639da42a9edced244f3446, type: 2}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: Stretching.x
-      value: 1.7
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: Stretching.y
-      value: 0.15
+      value: 0.1
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: WallMaterial
@@ -1278,7 +1278,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiateGameObjects
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6200882639943663350, guid: af99f804f49978a49a26e709a4b48b08, type: 3}
       propertyPath: instantiate_game_objects
