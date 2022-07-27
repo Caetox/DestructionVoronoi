@@ -104,6 +104,8 @@ public class DestructionController : MonoBehaviour
 
 	public bool IsAgainstWall = false;
 
+	public float GroundPlane = -4.18f;
+
 	public bool debugging;
 
 	void Start() {
@@ -221,7 +223,7 @@ public class DestructionController : MonoBehaviour
 
 				if (!polygon.anchored)
 				{
-					Vector3 RandomForce = new Vector3(UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1), UnityEngine.Random.Range(-1, 1));
+					Vector3 RandomForce = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f));
 					Child.GetComponent<Rigidbody>().mass = polygon.Surface * objectSize.y;
 					Child.GetComponent<Rigidbody>().AddForce(RandomForce * 100.0f);
 					//Destroy(Child.GetComponent<Rigidbody>());
@@ -428,13 +430,14 @@ public class DestructionController : MonoBehaviour
 				Particle p = new Particle(worldPosition, WallObject.transform.rotation, polygon.Surface * objectSize.y * WallMass, polygon.Edges.Count, 0, polygon.anchored, 35.0f, sidelength);
 				Particles.Add(p);
 
+				Vector3 RandomForce = new Vector3(Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f), Random.Range(-1.0f, 1.0f)) * p.Mass * 120.0f;// * 1550.0f;
 				if (IsAgainstWall)
 				{
-					p.ApplyForce(impactPoint, impulse);
+					p.ApplyForce(impactPoint, impulse + RandomForce);
 				}
 				else
 				{
-					p.ApplyForce(impactPoint, -impulse);
+					p.ApplyForce(impactPoint, -impulse + RandomForce);
 				}
 				polygon.ParticleIndex = index++;
 			}
@@ -446,8 +449,8 @@ public class DestructionController : MonoBehaviour
 		if (Particles != null)
 		{
 			Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
-			float linearDamping = 0.99f;
-			float angularDamping = 0.99f;
+			float linearDamping = 0.995f;
+			float angularDamping = 0.98f;
 			float delta = Time.deltaTime;
 			int numParticles = Particles.Count;
 			for (int i = 0; i < numParticles; ++i)
@@ -505,7 +508,7 @@ public class DestructionController : MonoBehaviour
 
 	public bool HasGroundCollision(Vector3 vertex, Particle particle)
 	{
-		Vector3 Floor = new Vector3(0, -4.1f, 0);
+		Vector3 Floor = new Vector3(0, GroundPlane, 0);
 		Vector3 FloorNormal = new Vector3(0, 1.0f, 0);
 		float SoftMargin = 0.001f;
 		return (vertex.y < Floor.y);
@@ -513,24 +516,26 @@ public class DestructionController : MonoBehaviour
 
 	public void GroundCollision(Vector3 vertex, Particle particle)
 	{
-		Vector3 Floor = new Vector3(0, -4.1f, 0);
+		Vector3 Floor = new Vector3(0, GroundPlane, 0);
 		Vector3 FloorNormal = new Vector3(0, 1.0f, 0);
 		float SoftMargin = 0.001f;
 
 		// Resolve collision
 		float depth = (Floor.y - vertex.y);
-		particle.Pos += (FloorNormal * depth);// + (FloorNormal * SoftMargin * 0.5f);
+		if (depth > SoftMargin * 0.2f)
+			particle.Pos += (FloorNormal * depth);// + (FloorNormal * SoftMargin * 0.5f);
 
 		Vector3 gravity = new Vector3(0.0f, -9.81f, 0.0f);
-		particle.Acc -= gravity;
+		//particle.Acc -= gravity;
 		particle.Acc = new Vector3(0,0,0);
+		particle.Vel *= 0.98f;
+		particle.AngularVel *= 0.98f;
 
 		// Apply force
-		//particle.ApplyForce(vertex, -particle.Vel * particle.Mass);
 		if (depth > SoftMargin)
 		{
 			Vector3 dir = vertex;
-			particle.ApplyForce(vertex, FloorNormal * particle.Mass * 1.0f);
+			particle.ApplyForce(vertex, FloorNormal * particle.Mass * 1.5f);
 		}
 		
 	}
